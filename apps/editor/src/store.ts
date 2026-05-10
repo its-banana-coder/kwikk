@@ -31,6 +31,7 @@ interface EditorState {
   timeline: TimelineState;
   playback: PlaybackState;
   selectScene: (sceneId: string) => void;
+  syncSelectedScene: (sceneId: string) => void;
   selectElement: (sceneId: string, elementId: string) => void;
   setCurrentTime: (timeMs: number) => void;
   setPlayback: (isPlaying: boolean) => void;
@@ -108,6 +109,15 @@ export const useEditorStore = create<EditorState>((set) => ({
           ...state.timeline,
           currentTimeMs: track?.startMs ?? state.timeline.currentTimeMs
         }
+      };
+    }),
+  syncSelectedScene: (sceneId) =>
+    set((state) => {
+      if (state.selectedSceneId === sceneId) return state;
+      const scene = getScene(state.project, sceneId);
+      return {
+        selectedSceneId: sceneId,
+        selectedElementIds: scene?.elements[0] ? [scene.elements[0].id] : []
       };
     }),
   selectElement: (sceneId, elementId) =>

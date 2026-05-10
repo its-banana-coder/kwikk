@@ -12,6 +12,7 @@ function App() {
   const timeline = useEditorStore((state) => state.timeline);
   const playback = useEditorStore((state) => state.playback);
   const selectScene = useEditorStore((state) => state.selectScene);
+  const syncSelectedScene = useEditorStore((state) => state.syncSelectedScene);
   const selectElement = useEditorStore((state) => state.selectElement);
   const setCurrentTime = useEditorStore((state) => state.setCurrentTime);
   const togglePlayback = useEditorStore((state) => state.togglePlayback);
@@ -72,6 +73,12 @@ function App() {
       timelineRef.current.pause();
     }
   }, [playback.isPlaying]);
+
+  useEffect(() => {
+    if (frame.sceneId && frame.sceneId !== selectedSceneId) {
+      syncSelectedScene(frame.sceneId);
+    }
+  }, [frame.sceneId, selectedSceneId, syncSelectedScene]);
 
   useEffect(() => {
     let frameId = 0;
@@ -325,10 +332,7 @@ function App() {
             <p className="empty-state">Select a scene element to edit its semantic state.</p>
           )}
 
-          <div className="section-block">
-            <h3>Resolved Frame</h3>
-            <pre>{JSON.stringify(frame, null, 2)}</pre>
-          </div>
+
 
           {errors.length > 0 && (
             <div className="section-block errors">
