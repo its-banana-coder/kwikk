@@ -197,6 +197,7 @@ export function createPrototypeProject(): ProjectDocument {
     createScene({
       id: "scene_hook",
       name: "Hook",
+      durationMs: 5000,
       backgroundColor: "#0f172a",
       elements: [
         createElementNode({
@@ -213,6 +214,15 @@ export function createPrototypeProject(): ProjectDocument {
           style: {
             backgroundColor: "#172554"
           },
+          animations: [
+            {
+              id: "hook_backdrop_zoom",
+              type: "zoomIn",
+              startMs: 0,
+              durationMs: 5000,
+              easing: "easeOut"
+            }
+          ],
           content: {
             shape: "rectangle"
           }
@@ -248,6 +258,13 @@ export function createPrototypeProject(): ProjectDocument {
               startMs: 0,
               durationMs: 600,
               easing: "easeOut"
+            },
+            {
+              id: "hook_title_out",
+              type: "fadeOut",
+              startMs: 4200,
+              durationMs: 600,
+              easing: "easeIn"
             }
           ],
           content: {
@@ -278,6 +295,13 @@ export function createPrototypeProject(): ProjectDocument {
               startMs: 250,
               durationMs: 700,
               easing: "easeOut"
+            },
+            {
+              id: "hook_support_out",
+              type: "fadeOut",
+              startMs: 4300,
+              durationMs: 500,
+              easing: "easeIn"
             }
           ],
           content: {
@@ -303,8 +327,15 @@ export function createPrototypeProject(): ProjectDocument {
               id: "hook_image_zoom",
               type: "zoomIn",
               startMs: 0,
-              durationMs: 1200,
+              durationMs: 5000,
               easing: "easeOut"
+            },
+            {
+              id: "hook_image_out",
+              type: "fadeOut",
+              startMs: 4350,
+              durationMs: 450,
+              easing: "easeIn"
             }
           ],
           content: {
@@ -317,6 +348,7 @@ export function createPrototypeProject(): ProjectDocument {
     createScene({
       id: "scene_breakdown",
       name: "Breakdown",
+      durationMs: 5000,
       backgroundColor: "#111827",
       elements: [
         createElementNode({
@@ -333,6 +365,15 @@ export function createPrototypeProject(): ProjectDocument {
           style: {
             backgroundColor: "#1f2937"
           },
+          animations: [
+            {
+              id: "breakdown_card_zoom",
+              type: "zoomIn",
+              startMs: 0,
+              durationMs: 5000,
+              easing: "easeOut"
+            }
+          ],
           content: {
             shape: "rectangle"
           }
@@ -361,6 +402,13 @@ export function createPrototypeProject(): ProjectDocument {
               startMs: 0,
               durationMs: 850,
               easing: "easeOut"
+            },
+            {
+              id: "breakdown_title_out",
+              type: "fadeOut",
+              startMs: 4200,
+              durationMs: 600,
+              easing: "easeIn"
             }
           ],
           content: {
@@ -384,6 +432,22 @@ export function createPrototypeProject(): ProjectDocument {
             fontWeight: 500,
             color: "#d1d5db"
           },
+          animations: [
+            {
+              id: "breakdown_copy_fade",
+              type: "fadeIn",
+              startMs: 200,
+              durationMs: 700,
+              easing: "easeOut"
+            },
+            {
+              id: "breakdown_copy_out",
+              type: "fadeOut",
+              startMs: 4300,
+              durationMs: 500,
+              easing: "easeIn"
+            }
+          ],
           content: {
             text: "Every visible frame resolves from timeMs. That keeps preview, playback, and export using the same deterministic contract."
           }
@@ -409,6 +473,13 @@ export function createPrototypeProject(): ProjectDocument {
               startMs: 300,
               durationMs: 500,
               easing: "easeOut"
+            },
+            {
+              id: "breakdown_badge_out",
+              type: "fadeOut",
+              startMs: 4300,
+              durationMs: 450,
+              easing: "easeIn"
             }
           ],
           content: {
@@ -432,6 +503,22 @@ export function createPrototypeProject(): ProjectDocument {
             fontWeight: 700,
             color: "#ecfeff"
           },
+          animations: [
+            {
+              id: "breakdown_badge_text_fade",
+              type: "fadeIn",
+              startMs: 450,
+              durationMs: 450,
+              easing: "easeOut"
+            },
+            {
+              id: "breakdown_badge_text_out",
+              type: "fadeOut",
+              startMs: 4350,
+              durationMs: 400,
+              easing: "easeIn"
+            }
+          ],
           content: {
             text: "Deterministic"
           }
@@ -441,6 +528,7 @@ export function createPrototypeProject(): ProjectDocument {
     createScene({
       id: "scene_cta",
       name: "CTA",
+      durationMs: 5000,
       backgroundColor: "#1e1b4b",
       elements: [
         createElementNode({
@@ -457,6 +545,15 @@ export function createPrototypeProject(): ProjectDocument {
           style: {
             backgroundColor: "#312e81"
           },
+          animations: [
+            {
+              id: "cta_backdrop_zoom",
+              type: "zoomIn",
+              startMs: 0,
+              durationMs: 5000,
+              easing: "easeOut"
+            }
+          ],
           content: {
             shape: "rectangle"
           }
@@ -483,8 +580,15 @@ export function createPrototypeProject(): ProjectDocument {
               id: "cta_title_zoom",
               type: "zoomIn",
               startMs: 0,
-              durationMs: 900,
+              durationMs: 5000,
               easing: "easeOut"
+            },
+            {
+              id: "cta_title_out",
+              type: "fadeOut",
+              startMs: 4200,
+              durationMs: 600,
+              easing: "easeIn"
             }
           ],
           content: {
@@ -512,6 +616,13 @@ export function createPrototypeProject(): ProjectDocument {
               startMs: 400,
               durationMs: 450,
               easing: "easeOut"
+            },
+            {
+              id: "cta_button_out",
+              type: "fadeOut",
+              startMs: 4300,
+              durationMs: 450,
+              easing: "easeIn"
             }
           ],
           content: {
@@ -535,6 +646,22 @@ export function createPrototypeProject(): ProjectDocument {
             fontWeight: 700,
             color: "#111827"
           },
+          animations: [
+            {
+              id: "cta_button_text_fade",
+              type: "fadeIn",
+              startMs: 500,
+              durationMs: 400,
+              easing: "easeOut"
+            },
+            {
+              id: "cta_button_text_out",
+              type: "fadeOut",
+              startMs: 4350,
+              durationMs: 400,
+              easing: "easeIn"
+            }
+          ],
           content: {
             text: "Ready for export"
           }
@@ -563,6 +690,13 @@ export function createPrototypeProject(): ProjectDocument {
               startMs: 180,
               durationMs: 700,
               easing: "easeOut"
+            },
+            {
+              id: "cta_note_out",
+              type: "fadeOut",
+              startMs: 4250,
+              durationMs: 500,
+              easing: "easeIn"
             }
           ],
           content: {

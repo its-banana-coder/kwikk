@@ -225,6 +225,14 @@ describe("timeline selectors", () => {
     expect(getActiveTrack(project.timelineTracks, 6000)).toBeNull();
   });
 
+  it("returns the final track at the exact timeline duration boundary", () => {
+    const totalDurationMs = getTimelineDurationMs(project.timelineTracks);
+    const active = getActiveSceneWindow(project, totalDurationMs);
+
+    expect(active?.scene.id).toBe("scene_b");
+    expect(active?.localTimeMs).toBe(2000);
+  });
+
   describe("getActiveTrack layer precedence", () => {
     it("selects highest layer when tracks overlap", () => {
       const projectWithOverlap = createProjectDocument({
@@ -285,10 +293,11 @@ describe("timeline selectors", () => {
   });
 
   describe("edge cases", () => {
-    it("returns null at exact end boundary", () => {
+    it("returns the final scene at exact end boundary", () => {
       const active = getActiveSceneWindow(project, 5000);
 
-      expect(active).toBeNull();
+      expect(active?.scene.id).toBe("scene_b");
+      expect(active?.localTimeMs).toBe(2000);
     });
 
     it("returns active at exact start boundary", () => {

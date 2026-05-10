@@ -28,6 +28,9 @@ function App() {
       loop: true
     })
   );
+  const playbackRef = useRef(playback.isPlaying);
+
+  playbackRef.current = playback.isPlaying;
 
   useEffect(() => {
     timelineRef.current.setDuration(timeline.durationMs);
@@ -55,8 +58,8 @@ function App() {
       const deltaMs = timestamp - previousTimestamp;
       previousTimestamp = timestamp;
 
-      const nextTimeMs = timelineRef.current.tick(deltaMs);
-      if (timelineRef.current.isPlaying) {
+      if (playbackRef.current) {
+        const nextTimeMs = timelineRef.current.tick(deltaMs);
         setCurrentTime(nextTimeMs);
       }
 

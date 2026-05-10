@@ -21,14 +21,28 @@ describe("scene graph helpers", () => {
     expect(element.animations).toEqual([]);
   });
 
-  it("builds a 30 second prototype reel", () => {
+  it("builds a 15 second prototype reel", () => {
     const project = createPrototypeProject();
 
     expect(project.scenes).toHaveLength(3);
     expect(project.timelineTracks).toHaveLength(3);
     const lastTrack = project.timelineTracks[project.timelineTracks.length - 1];
-    expect(lastTrack?.startMs).toBe(20000);
-    expect(lastTrack?.durationMs).toBe(10000);
+    expect(lastTrack?.startMs).toBe(10000);
+    expect(lastTrack?.durationMs).toBe(5000);
+  });
+
+  it("keeps visible animation coverage near the end of every prototype scene", () => {
+    const project = createPrototypeProject();
+
+    for (const scene of project.scenes) {
+      const latestAnimationEndMs = Math.max(
+        ...scene.elements.flatMap((element) =>
+          element.animations.map((animation) => animation.startMs + animation.durationMs)
+        )
+      );
+
+      expect(latestAnimationEndMs).toBeGreaterThanOrEqual(scene.durationMs - 800);
+    }
   });
 
   it("reflows timeline tracks when a scene duration changes", () => {

@@ -120,9 +120,30 @@ export function getTimelineDurationMs(tracks: TimelineTrack[]): number {
 }
 
 export function getActiveTrack(tracks: TimelineTrack[], timeMs: number): TimelineTrack | null {
-  return [...tracks]
-    .filter((track) => timeMs >= track.startMs && timeMs < track.startMs + track.durationMs)
-    .sort((left, right) => right.layer - left.layer)[0] ?? null;
+  const activeTrack =
+    [...tracks]
+      .filter((track) => timeMs >= track.startMs && timeMs < track.startMs + track.durationMs)
+      .sort((left, right) => right.layer - left.layer)[0] ?? null;
+
+  if (activeTrack) {
+    return activeTrack;
+  }
+
+  const timelineDurationMs = getTimelineDurationMs(tracks);
+  if (timeMs !== timelineDurationMs || tracks.length === 0) {
+    return null;
+  }
+
+  return [...tracks].sort((left, right) => {
+    const leftEnd = left.startMs + left.durationMs;
+    const rightEnd = right.startMs + right.durationMs;
+
+    if (leftEnd !== rightEnd) {
+      return rightEnd - leftEnd;
+    }
+
+    return right.layer - left.layer;
+  })[0] ?? null;
 }
 
 export function getActiveSceneWindow(project: ProjectDocument, timeMs: number): ActiveSceneWindow | null {

@@ -164,7 +164,9 @@ h1 {
 }
 
 .phone-frame {
+  width: min(100%, 420px);
   margin-top: 18px;
+  margin-inline: auto;
   padding: 18px;
   border-radius: 38px;
   background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.92));
@@ -186,7 +188,9 @@ h1 {
 }
 
 .playback-bar {
+  width: min(100%, 420px);
   margin-top: 18px;
+  margin-inline: auto;
   display: grid;
   gap: 10px;
 }
