@@ -360,13 +360,13 @@ describe("scene graph helpers", () => {
         ...el,
         layout: { ...el.layout, x: el.layout.x + 50 },
         content: { text: "New" },
-        style: { ...el.style, fontSize: (el.style.fontSize ?? 36) + 12 }
+        style: { ...el.style, fontSize: (el.style.fontSize ?? 48) + 12 }
       }));
 
       const updatedEl = updated.scenes[0].elements[0];
       expect(updatedEl.layout.x).toBe(50);
       expect(updatedEl.content?.text).toBe("New");
-      expect(updatedEl.style.fontSize).toBe(48);
+      expect(updatedEl.style.fontSize).toBe(60);
     });
   });
 });

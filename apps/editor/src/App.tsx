@@ -33,6 +33,8 @@ function App() {
   const [sceneDurationInput, setSceneDurationInput] = useState(
     selectedScene ? String(selectedScene.durationMs) : ""
   );
+  const [isScenesCollapsed, setIsScenesCollapsed] = useState(false);
+  const [isTimelineVisible, setIsTimelineVisible] = useState(false);
 
   playbackRef.current = playback.isPlaying;
 
@@ -116,53 +118,85 @@ function App() {
         </div>
       </header>
 
-      <main className="workspace">
+      <main className={isScenesCollapsed ? "workspace scenes-collapsed" : "workspace"}>
         <section className="panel scene-panel">
-          <div className="panel-header">
-            <h2>Scenes</h2>
-            <span>{project.scenes.length}</span>
-          </div>
-          <div className="scene-list">
-            {project.scenes.map((scene) => (
-              <button
-                key={scene.id}
-                className={scene.id === selectedSceneId ? "scene-item active" : "scene-item"}
-                onClick={() => selectScene(scene.id)}
-              >
-                <strong>{scene.name}</strong>
-                <span>{scene.durationMs / 1000}s</span>
+          <div className="panel-header" style={{ justifyContent: isScenesCollapsed ? 'center' : 'space-between' }}>
+            {isScenesCollapsed ? (
+              <button className="collapse-btn" onClick={() => setIsScenesCollapsed(false)}>
+                ›
               </button>
-            ))}
+            ) : (
+              <>
+                <h2>Scenes</h2>
+                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                  <span>{project.scenes.length}</span>
+                  <button className="collapse-btn" onClick={() => setIsScenesCollapsed(true)}>
+                    ‹
+                  </button>
+                </div>
+              </>
+            )}
           </div>
+          {!isScenesCollapsed && (
+            <div className="controls-panel" style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+              <button className="playback-button" onClick={togglePlayback} style={{ flex: 1 }}>
+                {playback.isPlaying ? "Pause" : "Play"}
+              </button>
+              <button className="playback-button" onClick={() => setIsTimelineVisible(!isTimelineVisible)} style={{ flex: 1, padding: '12px 10px', fontSize: '14px' }}>
+                {isTimelineVisible ? "Hide Timeline" : "Show Timeline"}
+              </button>
+            </div>
+          )}
+          {!isScenesCollapsed && (
+            <div className="scene-list">
+              {project.scenes.map((scene) => (
+                <button
+                  key={scene.id}
+                  className={scene.id === selectedSceneId ? "scene-item active" : "scene-item"}
+                  onClick={() => selectScene(scene.id)}
+                >
+                  <strong>{scene.name}</strong>
+                  <span>{scene.durationMs / 1000}s</span>
+                </button>
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="panel preview-panel">
-          <div className="preview-header">
-            <div>
-              <p className="eyebrow">Preview</p>
-              <h2>{selectedScene?.name ?? "No scene selected"}</h2>
-            </div>
-            <button className="playback-button" onClick={togglePlayback}>
-              {playback.isPlaying ? "Pause" : "Play"}
-            </button>
-          </div>
-          <div className="phone-frame">
-            <PreviewCanvas project={project} timeMs={timeline.currentTimeMs} />
-          </div>
-          <div className="playback-bar">
-            <input
-              type="range"
-              min={0}
-              max={timeline.durationMs}
-              step={50}
-              value={timeline.currentTimeMs}
-              onChange={(event) => setCurrentTime(Number(event.target.value))}
+          <div className="phone-frame" style={{ marginTop: 0 }}>
+            <PreviewCanvas 
+              project={project} 
+              timeMs={timeline.currentTimeMs} 
+              selectedElementId={selectedElement?.id}
+              onUpdateElement={(id, updates) => {
+                if (selectedScene) {
+                  updateElement(selectedScene.id, id, updates);
+                }
+              }}
+              onSelectElement={(id) => {
+                if (selectedScene) {
+                  selectElement(selectedScene.id, id || "");
+                }
+              }}
             />
-            <div className="time-row">
-              <span>{Math.round(timeline.currentTimeMs)} ms</span>
-              <span>Scene {frame.sceneId ?? "none"}</span>
-            </div>
           </div>
+          {isTimelineVisible && (
+            <div className="playback-bar">
+              <input
+                type="range"
+                min={0}
+                max={timeline.durationMs}
+                step={50}
+                value={timeline.currentTimeMs}
+                onChange={(event) => setCurrentTime(Number(event.target.value))}
+              />
+              <div className="time-row">
+                <span>{Math.round(timeline.currentTimeMs)} ms</span>
+                <span>Scene {frame.sceneId ?? "none"}</span>
+              </div>
+            </div>
+          )}
         </section>
 
         <section className="panel properties-panel">

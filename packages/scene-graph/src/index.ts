@@ -27,7 +27,7 @@ export const DEFAULT_LAYOUT: LayoutProps = {
 
 export const DEFAULT_STYLE: StyleProps = {
   fontFamily: "Inter",
-  fontSize: 36,
+  fontSize: 48,
   fontWeight: 600,
   color: "#f8fafc",
   backgroundColor: "transparent"
