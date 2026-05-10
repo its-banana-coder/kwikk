@@ -24,6 +24,7 @@ export interface StyleProps {
   fontSize?: number;
   fontFamily?: string;
   fontWeight?: string | number;
+  fontStyle?: string;
   color?: string;
   backgroundColor?: string;
 }

@@ -1,12 +1,12 @@
 import { PixiSceneRenderer, resolveRenderFrame } from "@kwikk/render-core";
-import type { ElementContent, ProjectDocument } from "@kwikk/shared-types";
+import type { ElementContent, ProjectDocument, LayoutProps } from "@kwikk/shared-types";
 import { useEffect, useRef, useState } from "react";
 
 interface PreviewCanvasProps {
   project: ProjectDocument;
   timeMs: number;
   selectedElementId?: string | null;
-  onUpdateElement?: (id: string, updates: { content: Partial<ElementContent> }) => void;
+  onUpdateElement?: (id: string, updates: { content?: Partial<ElementContent>, layout?: Partial<LayoutProps>, style?: any }) => void;
   onSelectElement?: (id: string | null) => void;
 }
 
@@ -16,6 +16,9 @@ export function PreviewCanvas({ project, timeMs, selectedElementId, onUpdateElem
   const latestProjectRef = useRef(project);
   const latestTimeRef = useRef(timeMs);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartPos, setDragStartPos] = useState<{ x: number; y: number } | null>(null);
+  const [elementStartPos, setElementStartPos] = useState<{ x: number; y: number } | null>(null);
 
   latestProjectRef.current = project;
   latestTimeRef.current = timeMs;
@@ -118,6 +121,7 @@ export function PreviewCanvas({ project, timeMs, selectedElementId, onUpdateElem
     const fontSize = (selectedElement.style.fontSize ?? 48) * scale;
     const fontFamily = selectedElement.style.fontFamily ?? "Inter";
     const fontWeight = selectedElement.style.fontWeight ?? "600";
+    const fontStyle = selectedElement.style.fontStyle ?? "normal";
 
     textOverlay = (
       <textarea
@@ -137,9 +141,10 @@ export function PreviewCanvas({ project, timeMs, selectedElementId, onUpdateElem
           padding: 0,
           margin: 0,
           overflow: "hidden",
-          fontSize: `${fontSize}px`,
-          fontFamily: fontFamily,
-          fontWeight: fontWeight,
+              fontSize: `${fontSize}px`,
+              fontFamily: fontFamily,
+              fontWeight: fontWeight,
+              fontStyle: fontStyle,
           lineHeight: "normal"
         }}
         value={selectedElement.content?.text ?? ""}
@@ -154,12 +159,9 @@ export function PreviewCanvas({ project, timeMs, selectedElementId, onUpdateElem
     );
   }
 
-  const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!onSelectElement) return;
-    
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+  const getFrameCoordinates = (clientX: number, clientY: number, rect: DOMRect) => {
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
 
     const rendererWidth = dimensions.width;
     const rendererHeight = dimensions.height;
@@ -172,8 +174,21 @@ export function PreviewCanvas({ project, timeMs, selectedElementId, onUpdateElem
     const offsetX = (rendererWidth - frameWidth) / 2;
     const offsetY = (rendererHeight - frameHeight) / 2;
 
-    const frameX = (x - offsetX) / scale;
-    const frameY = (y - offsetY) / scale;
+    return {
+      frameX: (x - offsetX) / scale,
+      frameY: (y - offsetY) / scale,
+      scale
+    };
+  };
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!onSelectElement) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const { frameX, frameY } = getFrameCoordinates(e.clientX, e.clientY, rect);
+
+    let clickedElementId: string | null = null;
+    let clickedElement = null;
 
     for (let i = frame.elements.length - 1; i >= 0; i--) {
       const el = frame.elements[i];
@@ -183,12 +198,44 @@ export function PreviewCanvas({ project, timeMs, selectedElementId, onUpdateElem
         frameY >= el.layout.y &&
         frameY <= el.layout.y + el.layout.height
       ) {
-        onSelectElement(el.id);
-        return;
+        clickedElementId = el.id;
+        clickedElement = el;
+        break;
       }
     }
-    
-    onSelectElement(null);
+
+    onSelectElement(clickedElementId);
+
+    if (clickedElementId && clickedElement) {
+      setIsDragging(true);
+      setDragStartPos({ x: frameX, y: frameY });
+      setElementStartPos({ x: clickedElement.layout.x, y: clickedElement.layout.y });
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging || !dragStartPos || !elementStartPos || !selectedElementId || !onUpdateElement) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const { frameX, frameY } = getFrameCoordinates(e.clientX, e.clientY, rect);
+
+    const deltaX = frameX - dragStartPos.x;
+    const deltaY = frameY - dragStartPos.y;
+
+    onUpdateElement(selectedElementId, {
+      layout: {
+        x: elementStartPos.x + deltaX,
+        y: elementStartPos.y + deltaY
+      }
+    });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    setIsDragging(false);
+    setDragStartPos(null);
+    setElementStartPos(null);
+    e.currentTarget.releasePointerCapture(e.pointerId);
   };
 
   return (
@@ -196,8 +243,11 @@ export function PreviewCanvas({ project, timeMs, selectedElementId, onUpdateElem
       <div 
         className="preview-canvas" 
         ref={mountRef} 
-        style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }} 
-        onClick={handleCanvasClick}
+        style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0, cursor: isDragging ? "grabbing" : "default" }} 
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
       />
       {textOverlay}
     </div>

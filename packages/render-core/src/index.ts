@@ -65,6 +65,7 @@ function createTextNode(pixi: PixiModule, element: ElementNode): PixiContainer {
       fontFamily: element.style.fontFamily ?? "Inter",
       fontSize: element.style.fontSize ?? 48,
       fontWeight: normalizeFontWeight(element.style.fontWeight) ?? "600",
+      fontStyle: (element.style.fontStyle ?? "normal") as any,
       wordWrap: true,
       wordWrapWidth: element.layout.width
     }
@@ -88,7 +89,8 @@ function createPlaceholderNode(
       fill: "#e2e8f0",
       fontFamily: "Inter",
         fontSize: 32,
-      fontWeight: "600",
+        fontWeight: "600",
+        fontStyle: "normal",
       wordWrap: true,
       wordWrapWidth: Math.max(120, element.layout.width - 32)
     }

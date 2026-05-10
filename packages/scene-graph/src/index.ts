@@ -29,6 +29,7 @@ export const DEFAULT_STYLE: StyleProps = {
   fontFamily: "Inter",
   fontSize: 48,
   fontWeight: 600,
+  fontStyle: "normal",
   color: "#f8fafc",
   backgroundColor: "transparent"
 };

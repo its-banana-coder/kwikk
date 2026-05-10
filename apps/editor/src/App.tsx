@@ -249,20 +249,100 @@ function App() {
           {selectedScene && selectedElement ? (
             <div className="inspector-form">
               {selectedElement.type === "text" && (
-                <label>
-                  Text
-                  <textarea
-                    value={selectedElement.content?.text ?? ""}
-                    onChange={(event) =>
-                      updateElement(selectedScene.id, selectedElement.id, {
-                        content: {
-                          ...selectedElement.content,
-                          text: event.target.value
+                <>
+                  <label>
+                    Text
+                    <textarea
+                      value={selectedElement.content?.text ?? ""}
+                      onChange={(event) =>
+                        updateElement(selectedScene.id, selectedElement.id, {
+                          content: {
+                            ...selectedElement.content,
+                            text: event.target.value
+                          }
+                        })
+                      }
+                    />
+                  </label>
+
+                  <div className="text-style-controls" style={{ display: 'grid', gap: 8, marginTop: 8 }}>
+                    <label>
+                      Font
+                      <select
+                        value={selectedElement.style.fontFamily ?? "Inter"}
+                        onChange={(e) =>
+                          updateElement(selectedScene.id, selectedElement.id, {
+                            style: { fontFamily: e.target.value }
+                          })
                         }
-                      })
-                    }
-                  />
-                </label>
+                      >
+                        <option value="Inter">Inter</option>
+                        <option value="Space Grotesk">Space Grotesk</option>
+                        <option value="Roboto">Roboto</option>
+                        <option value="Georgia">Georgia</option>
+                        <option value="Arial">Arial</option>
+                      </select>
+                    </label>
+
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <label style={{ flex: 1 }}>
+                        Size
+                        <input
+                          type="number"
+                          min={8}
+                          step={1}
+                          value={selectedElement.style.fontSize ?? 48}
+                          onChange={(e) =>
+                            updateElement(selectedScene.id, selectedElement.id, {
+                              style: { fontSize: Number(e.target.value) }
+                            })
+                          }
+                        />
+                      </label>
+
+                      <label style={{ flex: 1 }}>
+                        Color
+                        <input
+                          type="color"
+                          value={selectedElement.style.color ?? "#f8fafc"}
+                          onChange={(e) =>
+                            updateElement(selectedScene.id, selectedElement.id, {
+                              style: { color: e.target.value }
+                            })
+                          }
+                        />
+                      </label>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <input
+                          type="checkbox"
+                          checked={Number(selectedElement.style.fontWeight ?? 600) >= 700}
+                          onChange={(e) =>
+                            updateElement(selectedScene.id, selectedElement.id, {
+                              style: { fontWeight: e.target.checked ? 700 : 400 }
+                            })
+                          }
+                        />
+                        Bold
+                      </label>
+
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <input
+                          type="checkbox"
+                          checked={(selectedElement.style.fontStyle ?? "normal") === "italic"}
+                          onChange={(e) =>
+                            updateElement(selectedScene.id, selectedElement.id, {
+                              style: { fontStyle: e.target.checked ? "italic" : "normal" }
+                            })
+                          }
+                        />
+                        Italic
+                      </label>
+                    </div>
+                  </div>
+                </>
               )}
 
               <div className="two-up">
