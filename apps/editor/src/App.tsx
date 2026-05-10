@@ -1,7 +1,7 @@
 import { resolveRenderFrame } from "@kwikk/render-core";
 import { validateProjectDocument } from "@kwikk/scene-graph";
 import { TimelineEngine } from "@kwikk/timeline";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PreviewCanvas } from "./PreviewCanvas";
 import { useEditorStore, useSelectedElement, useSelectedScene } from "./store";
 
@@ -29,8 +29,31 @@ function App() {
     })
   );
   const playbackRef = useRef(playback.isPlaying);
+  const [sceneDurationInput, setSceneDurationInput] = useState(
+    selectedScene ? String(selectedScene.durationMs) : ""
+  );
 
   playbackRef.current = playback.isPlaying;
+
+  useEffect(() => {
+    setSceneDurationInput(selectedScene ? String(selectedScene.durationMs) : "");
+  }, [selectedScene?.id, selectedScene?.durationMs]);
+
+  const commitSceneDuration = () => {
+    if (!selectedScene) {
+      return;
+    }
+
+    const parsedDuration = Number(sceneDurationInput);
+    if (!Number.isFinite(parsedDuration)) {
+      setSceneDurationInput(String(selectedScene.durationMs));
+      return;
+    }
+
+    const nextDurationMs = Math.max(1000, parsedDuration);
+    setSceneDurationInput(String(nextDurationMs));
+    updateSceneDuration(selectedScene.id, nextDurationMs);
+  };
 
   useEffect(() => {
     timelineRef.current.setDuration(timeline.durationMs);
@@ -149,10 +172,14 @@ function App() {
                   type="number"
                   min={1000}
                   step={500}
-                  value={selectedScene.durationMs}
-                  onChange={(event) =>
-                    updateSceneDuration(selectedScene.id, Number(event.target.value))
-                  }
+                  value={sceneDurationInput}
+                  onChange={(event) => setSceneDurationInput(event.target.value)}
+                  onBlur={commitSceneDuration}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      commitSceneDuration();
+                    }
+                  }}
                 />
               </label>
             </div>
