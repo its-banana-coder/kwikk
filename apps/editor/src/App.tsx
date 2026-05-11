@@ -17,6 +17,12 @@ function App() {
   const setCurrentTime = useEditorStore((state) => state.setCurrentTime);
   const togglePlayback = useEditorStore((state) => state.togglePlayback);
   const updateElement = useEditorStore((state) => state.updateElement);
+  const addElement = useEditorStore((state) => state.addElement);
+  const deleteElement = useEditorStore((state) => state.deleteElement);
+  const addScene = useEditorStore((state) => state.addScene);
+  const deleteScene = useEditorStore((state) => state.deleteScene);
+  const reorderScenes = useEditorStore((state) => state.reorderScenes);
+  const updateScene = useEditorStore((state) => state.updateScene);
   const updateSceneDuration = useEditorStore((state) => state.updateSceneDuration);
   const selectedScene = useSelectedScene();
   const selectedElement = useSelectedElement();
@@ -30,33 +36,12 @@ function App() {
     })
   );
   const playbackRef = useRef(playback.isPlaying);
-  const [sceneDurationInput, setSceneDurationInput] = useState(
-    selectedScene ? String(selectedScene.durationMs) : ""
-  );
-  const [isScenesCollapsed, setIsScenesCollapsed] = useState(false);
   const [isTimelineVisible, setIsTimelineVisible] = useState(false);
+  const [isAddElementOpen, setIsAddElementOpen] = useState(false);
+  const [dragSceneIndex, setDragSceneIndex] = useState<number | null>(null);
+  const [dropSceneIndex, setDropSceneIndex] = useState<number | null>(null);
 
   playbackRef.current = playback.isPlaying;
-
-  useEffect(() => {
-    setSceneDurationInput(selectedScene ? String(selectedScene.durationMs) : "");
-  }, [selectedScene?.id, selectedScene?.durationMs]);
-
-  const commitSceneDuration = () => {
-    if (!selectedScene) {
-      return;
-    }
-
-    const parsedDuration = Number(sceneDurationInput);
-    if (!Number.isFinite(parsedDuration)) {
-      setSceneDurationInput(String(selectedScene.durationMs));
-      return;
-    }
-
-    const nextDurationMs = Math.max(1000, parsedDuration);
-    setSceneDurationInput(String(nextDurationMs));
-    updateSceneDuration(selectedScene.id, nextDurationMs);
-  };
 
   useEffect(() => {
     timelineRef.current.setDuration(timeline.durationMs);
@@ -118,49 +103,51 @@ function App() {
         </div>
       </header>
 
-      <main className={isScenesCollapsed ? "workspace scenes-collapsed" : "workspace"}>
-        <section className="panel scene-panel">
-          <div className="panel-header" style={{ justifyContent: isScenesCollapsed ? 'center' : 'space-between' }}>
-            {isScenesCollapsed ? (
-              <button className="collapse-btn" onClick={() => setIsScenesCollapsed(false)}>
-                ›
-              </button>
-            ) : (
-              <>
-                <h2>Scenes</h2>
-                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                  <span>{project.scenes.length}</span>
-                  <button className="collapse-btn" onClick={() => setIsScenesCollapsed(true)}>
-                    ‹
-                  </button>
-                </div>
-              </>
+      <main className="workspace">
+        <section className="panel left-panel">
+          <div className="transport-controls">
+            <button
+              className={`transport-btn${!playback.isPlaying ? " active" : ""}`}
+              onClick={() => { if (!playback.isPlaying) togglePlayback(); }}
+              title="Play"
+            >
+              ▶
+            </button>
+            <button
+              className={`transport-btn${playback.isPlaying ? " active" : ""}`}
+              onClick={() => { if (playback.isPlaying) togglePlayback(); }}
+              title="Pause"
+            >
+              ⏸
+            </button>
+            <button
+              className="transport-btn"
+              onClick={() => { if (playback.isPlaying) togglePlayback(); setCurrentTime(0); }}
+              title="Stop"
+            >
+              ■
+            </button>
+          </div>
+
+          <div className="accordion">
+            <button className="accordion-header" onClick={() => setIsAddElementOpen(!isAddElementOpen)}>
+              <span>Add Element</span>
+              <span className="accordion-chevron">{isAddElementOpen ? "−" : "+"}</span>
+            </button>
+            {isAddElementOpen && (
+              <div className="accordion-body">
+                <button className="add-el-btn" onClick={() => addElement(selectedSceneId ?? project.scenes[0]?.id, 'text')}>
+                  Text
+                </button>
+                <button className="add-el-btn" onClick={() => addElement(selectedSceneId ?? project.scenes[0]?.id, 'shape')}>
+                  Rectangle
+                </button>
+                <button className="add-el-btn" onClick={() => addElement(selectedSceneId ?? project.scenes[0]?.id, 'image')}>
+                  Image
+                </button>
+              </div>
             )}
           </div>
-          {!isScenesCollapsed && (
-            <div className="controls-panel" style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-              <button className="playback-button" onClick={togglePlayback} style={{ flex: 1 }}>
-                {playback.isPlaying ? "Pause" : "Play"}
-              </button>
-              <button className="playback-button" onClick={() => setIsTimelineVisible(!isTimelineVisible)} style={{ flex: 1, padding: '12px 10px', fontSize: '14px' }}>
-                {isTimelineVisible ? "Hide Timeline" : "Show Timeline"}
-              </button>
-            </div>
-          )}
-          {!isScenesCollapsed && (
-            <div className="scene-list">
-              {project.scenes.map((scene) => (
-                <button
-                  key={scene.id}
-                  className={scene.id === selectedSceneId ? "scene-item active" : "scene-item"}
-                  onClick={() => selectScene(scene.id)}
-                >
-                  <strong>{scene.name}</strong>
-                  <span>{scene.durationMs / 1000}s</span>
-                </button>
-              ))}
-            </div>
-          )}
         </section>
 
         <section className="panel preview-panel">
@@ -199,30 +186,44 @@ function App() {
           )}
         </section>
 
-        <section className="panel properties-panel">
-          <div className="panel-header">
-            <h2>Properties</h2>
-            <span>{selectedElement?.semanticRole ?? "Select an element"}</span>
-          </div>
-
+        <section className="panel properties-panel" style={{ gridArea: 'properties' }}>
           {selectedScene && (
-            <div className="section-block">
-              <label>
-                Scene Duration (ms)
+            <div className="scene-editor">
+              <div className="scene-editor-header">
+                <h3>Scene</h3>
                 <input
-                  type="number"
-                  min={1000}
-                  step={500}
-                  value={sceneDurationInput}
-                  onChange={(event) => setSceneDurationInput(event.target.value)}
-                  onBlur={commitSceneDuration}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      commitSceneDuration();
-                    }
-                  }}
+                  className="scene-name-input"
+                  type="text"
+                  value={selectedScene.name}
+                  onChange={(e) => updateScene(selectedScene.id, { name: e.target.value })}
                 />
-              </label>
+              </div>
+              <div className="scene-editor-row">
+                <label className="scene-bg-label">
+                  Background
+                  <div className="color-row">
+                    <input
+                      type="color"
+                      value={selectedScene.backgroundColor ?? "#ffffff"}
+                      onChange={(e) => updateScene(selectedScene.id, { backgroundColor: e.target.value })}
+                    />
+                    <span className="color-hex">{selectedScene.backgroundColor ?? "#ffffff"}</span>
+                  </div>
+                </label>
+                <label className="scene-dur-label">
+                  Duration
+                  <div className="dur-row">
+                    <input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={Math.round(selectedScene.durationMs / 1000)}
+                      onChange={(e) => updateSceneDuration(selectedScene.id, Number(e.target.value) * 1000)}
+                    />
+                    <span className="dur-unit">s</span>
+                  </div>
+                </label>
+              </div>
             </div>
           )}
 
@@ -239,8 +240,17 @@ function App() {
                   }
                   onClick={() => selectElement(selectedScene.id, element.id)}
                 >
-                  <strong>{element.semanticRole ?? element.type}</strong>
-                  <span>{element.id}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flex: 1 }}>
+                    <strong>{element.semanticRole ?? element.type}</strong>
+                    <span style={{ color: '#94a3b8', fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{element.id}</span>
+                  </div>
+                  <button
+                    className="delete-btn"
+                    onClick={(e) => { e.stopPropagation(); deleteElement(selectedScene.id, element.id); }}
+                    title="Delete element"
+                  >
+                    ×
+                  </button>
                 </button>
               ))}
             </div>
@@ -455,6 +465,47 @@ function App() {
             </div>
           )}
         </section>
+
+        <div className="scenes-bar">
+          <div className="scenes-scroll">
+            {project.scenes.map((scene, index) => (
+              <button
+                key={scene.id}
+                draggable
+                className={[
+                  "scene-chip",
+                  scene.id === selectedSceneId ? "active" : "",
+                  dropSceneIndex === index && dragSceneIndex !== index ? "drag-over" : ""
+                ].filter(Boolean).join(" ")}
+                onClick={() => selectScene(scene.id)}
+                onDragStart={(e) => { setDragSceneIndex(index); e.dataTransfer.effectAllowed = "move"; }}
+                onDragOver={(e) => { e.preventDefault(); setDropSceneIndex(index); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (dragSceneIndex !== null && dragSceneIndex !== index) reorderScenes(dragSceneIndex, index);
+                  setDragSceneIndex(null);
+                  setDropSceneIndex(null);
+                }}
+                onDragEnd={() => { setDragSceneIndex(null); setDropSceneIndex(null); }}
+              >
+                <span className="scene-chip-name">{scene.name}</span>
+                <span className="scene-chip-dur">{Math.round(scene.durationMs / 1000)}s · {scene.elements.length} el</span>
+                <button
+                  className="delete-btn"
+                  onClick={(e) => { e.stopPropagation(); deleteScene(scene.id); }}
+                  disabled={project.scenes.length <= 1}
+                  title="Delete scene"
+                >
+                  ×
+                </button>
+              </button>
+            ))}
+            <button className="scene-chip add-chip" onClick={addScene}>+ Scene</button>
+          </div>
+          <button className="timeline-toggle-btn" onClick={() => setIsTimelineVisible(!isTimelineVisible)}>
+            {isTimelineVisible ? "Hide Timeline" : "Timeline"}
+          </button>
+        </div>
       </main>
     </div>
   );

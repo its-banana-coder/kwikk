@@ -2,7 +2,10 @@ import { create } from "zustand";
 import {
   createPrototypeProject,
   updateSceneDuration as updateProjectSceneDuration,
-  updateSceneElement
+  updateSceneElement,
+  createElementNode,
+  createScene,
+  buildSequentialTimelineTracks
 } from "@kwikk/scene-graph";
 import type {
   ElementContent,
@@ -37,6 +40,12 @@ interface EditorState {
   setPlayback: (isPlaying: boolean) => void;
   togglePlayback: () => void;
   updateElement: (sceneId: string, elementId: string, patch: ElementPatch) => void;
+  addElement: (sceneId: string, type: ElementNode["type"]) => void;
+  deleteElement: (sceneId: string, elementId: string) => void;
+  addScene: () => void;
+  deleteScene: (sceneId: string) => void;
+  reorderScenes: (fromIndex: number, toIndex: number) => void;
+  updateScene: (sceneId: string, patch: { name?: string; backgroundColor?: string }) => void;
   updateSceneDuration: (sceneId: string, durationMs: number) => void;
 }
 
@@ -151,6 +160,110 @@ export const useEditorStore = create<EditorState>((set) => ({
       project: updateSceneElement(state.project, sceneId, elementId, (element) =>
         mergeElementPatch(element, patch)
       )
+    })),
+  addElement: (sceneId, type) =>
+    set((state) => {
+      const targetScene = getScene(state.project, sceneId);
+      if (!targetScene) return state;
+
+      const id = `el_${Math.random().toString(36).slice(2, 9)}`;
+      const newElement = createElementNode({
+        id,
+        type,
+        content:
+          type === "text"
+            ? { text: "New text" }
+            : type === "shape"
+            ? { shape: "rectangle", label: "Rectangle" }
+            : type === "image"
+            ? { src: "placeholder://image", label: "Image placeholder" }
+            : undefined
+      });
+
+      return {
+        project: {
+          ...state.project,
+          scenes: state.project.scenes.map((scene) =>
+            scene.id === sceneId ? { ...scene, elements: [...scene.elements, newElement] } : scene
+          )
+        },
+        selectedSceneId: sceneId,
+        selectedElementIds: [id]
+      } as unknown as EditorState;
+    }),
+  deleteElement: (sceneId, elementId) =>
+    set((state) => {
+      const scenes = state.project.scenes.map((scene) =>
+        scene.id !== sceneId
+          ? scene
+          : { ...scene, elements: scene.elements.filter((el) => el.id !== elementId) }
+      );
+      const updatedScene = scenes.find((s) => s.id === sceneId);
+      const wasSelected = state.selectedElementIds.includes(elementId);
+      return {
+        project: { ...state.project, scenes },
+        selectedElementIds: wasSelected
+          ? updatedScene?.elements[0] ? [updatedScene.elements[0].id] : []
+          : state.selectedElementIds
+      };
+    }),
+  addScene: () =>
+    set((state) => {
+      const id = `scene_${Math.random().toString(36).slice(2, 9)}`;
+      const newScene = createScene({ id, name: `Scene ${state.project.scenes.length + 1}`, backgroundColor: "#0f172a" });
+      const scenes = [...state.project.scenes, newScene];
+      const tracks = buildSequentialTimelineTracks(scenes);
+      const duration = getTimelineDurationMs(tracks);
+      return {
+        project: { ...state.project, scenes, timelineTracks: tracks },
+        selectedSceneId: id,
+        selectedElementIds: [],
+        timeline: { durationMs: duration, currentTimeMs: duration - newScene.durationMs }
+      };
+    }),
+  deleteScene: (sceneId) =>
+    set((state) => {
+      if (state.project.scenes.length <= 1) return state;
+      const deletedIndex = state.project.scenes.findIndex((s) => s.id === sceneId);
+      const scenes = state.project.scenes.filter((s) => s.id !== sceneId);
+      const tracks = buildSequentialTimelineTracks(scenes);
+      const duration = getTimelineDurationMs(tracks);
+      const nextScene = scenes[Math.min(deletedIndex, scenes.length - 1)];
+      return {
+        project: { ...state.project, scenes, timelineTracks: tracks },
+        selectedSceneId: nextScene?.id ?? "",
+        selectedElementIds: nextScene?.elements[0] ? [nextScene.elements[0].id] : [],
+        timeline: {
+          durationMs: duration,
+          currentTimeMs: Math.min(state.timeline.currentTimeMs, duration)
+        }
+      };
+    }),
+  reorderScenes: (fromIndex, toIndex) =>
+    set((state) => {
+      if (fromIndex === toIndex) return state;
+      const scenes = [...state.project.scenes];
+      const [moved] = scenes.splice(fromIndex, 1);
+      scenes.splice(toIndex, 0, moved);
+      const tracks = buildSequentialTimelineTracks(scenes);
+      const duration = getTimelineDurationMs(tracks);
+      return {
+        project: { ...state.project, scenes, timelineTracks: tracks },
+        timeline: {
+          ...state.timeline,
+          durationMs: duration,
+          currentTimeMs: Math.min(state.timeline.currentTimeMs, duration)
+        }
+      };
+    }),
+  updateScene: (sceneId, patch) =>
+    set((state) => ({
+      project: {
+        ...state.project,
+        scenes: state.project.scenes.map((s) =>
+          s.id !== sceneId ? s : { ...s, ...patch }
+        )
+      }
     })),
   updateSceneDuration: (sceneId, durationMs) =>
     set((state) => {

@@ -30,7 +30,7 @@ export const DEFAULT_STYLE: StyleProps = {
   fontSize: 48,
   fontWeight: 600,
   fontStyle: "normal",
-  color: "#f8fafc",
+  color: "#0f172a",
   backgroundColor: "transparent"
 };
 
@@ -74,7 +74,7 @@ export function createScene(input: {
     name: input.name,
     durationMs: input.durationMs ?? 10000,
     elements: input.elements ?? [],
-    backgroundColor: input.backgroundColor ?? "#0f172a"
+    backgroundColor: input.backgroundColor ?? "#ffffff"
   };
 }
 

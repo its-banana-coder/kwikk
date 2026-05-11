@@ -61,7 +61,7 @@ function createTextNode(pixi: PixiModule, element: ElementNode): PixiContainer {
   const text = new pixi.Text({
     text: element.content?.text ?? element.semanticRole ?? element.id,
     style: {
-      fill: element.style.color ?? "#f8fafc",
+      fill: element.style.color ?? "#0f172a",
       fontFamily: element.style.fontFamily ?? "Inter",
       fontSize: element.style.fontSize ?? 48,
       fontWeight: normalizeFontWeight(element.style.fontWeight) ?? "600",
@@ -86,7 +86,7 @@ function createPlaceholderNode(
   const text = new pixi.Text({
     text: label,
     style: {
-      fill: "#e2e8f0",
+      fill: "#0f172a",
       fontFamily: "Inter",
         fontSize: 32,
         fontWeight: "600",
@@ -149,7 +149,7 @@ export function resolveRenderFrame(
       timeMs: input.timeMs,
       sceneId: null,
       viewport: project.viewport,
-      backgroundColor: "#020617",
+      backgroundColor: "#ffffff",
       elements: []
     };
   }
@@ -158,7 +158,7 @@ export function resolveRenderFrame(
     timeMs: input.timeMs,
     sceneId: active.scene.id,
     viewport: project.viewport,
-    backgroundColor: active.scene.backgroundColor ?? "#020617",
+    backgroundColor: active.scene.backgroundColor ?? "#ffffff",
     elements: active.scene.elements
       .map((element) => resolveElementNodeAtTime(element, active.localTimeMs))
       .sort((left, right) => left.layout.zIndex - right.layout.zIndex)
@@ -187,9 +187,10 @@ export class PixiSceneRenderer {
     this.root = new pixi.Container();
     this.root.sortableChildren = true;
 
+    const bg = this.options?.backgroundColor;
     await this.app.init({
       resizeTo: container,
-      background: this.options?.backgroundColor ?? "#020617",
+      ...(bg === "transparent" ? { backgroundAlpha: 0 } : { background: bg ?? "#ffffff" }),
       antialias: true
     });
 

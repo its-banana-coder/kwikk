@@ -33,7 +33,7 @@ export function PreviewCanvas({ project, timeMs, selectedElementId, onUpdateElem
     let redrawFrameId = 0;
 
     const renderer = new PixiSceneRenderer(latestProjectRef.current, {
-      backgroundColor: "#020617"
+      backgroundColor: "transparent"
     });
     rendererRef.current = renderer;
 

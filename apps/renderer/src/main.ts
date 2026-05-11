@@ -8,7 +8,7 @@ const timeline = new TimelineEngine({
   loop: true
 });
 const renderer = new PixiSceneRenderer(project, {
-  backgroundColor: "#020617"
+  backgroundColor: "#ffffff"
 });
 
 export function renderFrame(timeMs: number) {
@@ -22,7 +22,7 @@ async function bootstrap() {
   }
 
   document.body.style.margin = "0";
-  document.body.style.background = "#020617";
+  document.body.style.background = "#ffffff";
   document.body.style.fontFamily = "Inter, sans-serif";
   mountNode.style.width = "100vw";
   mountNode.style.height = "100vh";
