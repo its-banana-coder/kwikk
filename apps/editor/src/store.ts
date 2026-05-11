@@ -29,6 +29,7 @@ interface EditorState {
   selectedElementIds: string[];
   timeline: TimelineState;
   playback: PlaybackState;
+  showAllElements: boolean;
   operationLog: EditorOperation[];
 
   dispatchOperation: (op: EditorOperation) => void;
@@ -39,6 +40,7 @@ interface EditorState {
   setCurrentTime: (timeMs: number) => void;
   setPlayback: (isPlaying: boolean) => void;
   togglePlayback: () => void;
+  toggleShowAllElements: () => void;
 
   updateElement: (sceneId: string, elementId: string, patch: ElementPatch) => void;
   addElement: (sceneId: string, type: ElementNode["type"]) => void;
@@ -63,14 +65,13 @@ const initialProject = createPrototypeProject();
 export const useEditorStore = create<EditorState>((set, get) => ({
   project: initialProject,
   selectedSceneId: initialProject.scenes[0]?.id ?? "",
-  selectedElementIds: initialProject.scenes[0]?.elements[0]
-    ? [initialProject.scenes[0].elements[0].id]
-    : [],
+  selectedElementIds: [],
   timeline: {
     currentTimeMs: 0,
     durationMs: getTimelineDurationMs(initialProject.timelineTracks)
   },
   playback: { isPlaying: false },
+  showAllElements: false,
   operationLog: [],
 
   dispatchOperation: (op) =>
@@ -135,11 +136,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   selectScene: (sceneId) =>
     set((state) => {
-      const scene = getScene(state.project, sceneId);
       const track = state.project.timelineTracks.find((t) => t.sceneId === sceneId);
       return {
         selectedSceneId: sceneId,
-        selectedElementIds: scene?.elements[0] ? [scene.elements[0].id] : [],
+        selectedElementIds: [],
         timeline: {
           ...state.timeline,
           currentTimeMs: track?.startMs ?? state.timeline.currentTimeMs
@@ -174,6 +174,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   togglePlayback: () =>
     set((state) => ({ playback: { ...state.playback, isPlaying: !state.playback.isPlaying } })),
 
+  toggleShowAllElements: () =>
+    set((state) => ({ showAllElements: !state.showAllElements })),
+
   // ─── Convenience wrappers — all route through dispatchOperation ─────────────
 
   updateElement: (sceneId, elementId, patch) =>
@@ -198,7 +201,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const scene = createScene({
       id,
       name: `Scene ${state.project.scenes.length + 1}`,
-      backgroundColor: "#0f172a"
+      backgroundColor: "#ffffff"
     });
     get().dispatchOperation({ operation: "add_scene", scene });
   },

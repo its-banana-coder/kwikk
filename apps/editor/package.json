@@ -9,10 +9,16 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
-    "@kwikk/render-core": "*",
-    "@kwikk/scene-graph": "*",
-    "@kwikk/shared-types": "*",
-    "@kwikk/timeline": "*",
+    "@kwikk/animation-engine": "workspace:*",
+    "@kwikk/render-core": "workspace:*",
+    "@kwikk/scene-graph": "workspace:*",
+    "@kwikk/shared-types": "workspace:*",
+    "@kwikk/timeline": "workspace:*",
+    "@kwikk/ui-kit": "workspace:*",
+    "@mantine/core": "^7.17.8",
+    "@mantine/hooks": "^7.17.8",
+    "@tabler/icons-react": "^3.31.0",
+    "framer-motion": "^12.12.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zustand": "^4.5.4"

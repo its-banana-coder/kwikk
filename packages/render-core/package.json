@@ -7,9 +7,9 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@kwikk/animation-engine": "*",
-    "@kwikk/shared-types": "*",
-    "@kwikk/timeline": "*",
+    "@kwikk/animation-engine": "workspace:*",
+    "@kwikk/shared-types": "workspace:*",
+    "@kwikk/timeline": "workspace:*",
     "pixi.js": "^8.2.6"
   },
   "scripts": {

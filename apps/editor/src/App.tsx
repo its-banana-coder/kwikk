@@ -2,670 +2,788 @@ import { resolveRenderFrame } from "@kwikk/render-core";
 import { validateProjectDocument } from "@kwikk/scene-graph";
 import { MOTION_PRESETS, buildPresetAnimations, type MotionPresetKey } from "@kwikk/animation-engine";
 import { TimelineEngine } from "@kwikk/timeline";
-import type { AnimationType } from "@kwikk/shared-types";
+import { InspectorField, tokens, useEditorLayoutStore } from "@kwikk/ui-kit";
+import {
+  ActionIcon,
+  Badge,
+  Box,
+  Button,
+  ColorInput,
+  Divider,
+  Group,
+  NumberInput,
+  ScrollArea,
+  SegmentedControl,
+  Select,
+  SimpleGrid,
+  Slider,
+  Stack,
+  Switch,
+  Text,
+  Textarea,
+  Tooltip
+} from "@mantine/core";
+import {
+  IconAdjustmentsHorizontal,
+  IconEye,
+  IconEyeOff,
+  IconLayoutSidebarLeftCollapse,
+  IconLayoutSidebarRightCollapse,
+  IconPhoto,
+  IconPlayerPauseFilled,
+  IconPlayerPlayFilled,
+  IconPlayerStopFilled,
+  IconPlus,
+  IconRectangle,
+  IconSparkles,
+  IconTextSize,
+  IconTimeline,
+  IconTrash,
+  IconUpload
+} from "@tabler/icons-react";
+import type { AnimationType, ElementNode, Scene } from "@kwikk/shared-types";
 import { useEffect, useRef, useState } from "react";
 import { PreviewCanvas } from "./PreviewCanvas";
+import type { EditorOperation, ElementPatch } from "./store";
 import { useEditorStore, useSelectedElement, useSelectedScene } from "./store";
 
-function App() {
-  const project = useEditorStore((state) => state.project);
-  const selectedSceneId = useEditorStore((state) => state.selectedSceneId);
-  const selectedElementIds = useEditorStore((state) => state.selectedElementIds);
-  const timeline = useEditorStore((state) => state.timeline);
-  const playback = useEditorStore((state) => state.playback);
-  const selectScene = useEditorStore((state) => state.selectScene);
-  const syncSelectedScene = useEditorStore((state) => state.syncSelectedScene);
-  const selectElement = useEditorStore((state) => state.selectElement);
-  const setCurrentTime = useEditorStore((state) => state.setCurrentTime);
-  const setPlayback = useEditorStore((state) => state.setPlayback);
-  const togglePlayback = useEditorStore((state) => state.togglePlayback);
-  const dispatchOperation = useEditorStore((state) => state.dispatchOperation);
-  const updateElement = useEditorStore((state) => state.updateElement);
-  const addElement = useEditorStore((state) => state.addElement);
-  const deleteElement = useEditorStore((state) => state.deleteElement);
-  const addScene = useEditorStore((state) => state.addScene);
-  const deleteScene = useEditorStore((state) => state.deleteScene);
-  const reorderScenes = useEditorStore((state) => state.reorderScenes);
-  const updateScene = useEditorStore((state) => state.updateScene);
-  const updateSceneDuration = useEditorStore((state) => state.updateSceneDuration);
+type SidebarTool = "elements" | "text" | "images" | null;
+
+const ICON_RAIL_WIDTH = 52;
+const EXPANSION_WIDTH = 220;
+const motionPresetKeys = Object.keys(MOTION_PRESETS) as MotionPresetKey[];
+
+function toNumber(v: string | number | undefined, fallback: number): number {
+  return typeof v === "number" && Number.isFinite(v) ? v : fallback;
+}
+
+function formatMs(v: number): string {
+  return `${Math.round(v)} ms`;
+}
+
+function humanizePreset(v: string): string {
+  return v.replace(/_/g, " ");
+}
+
+function nextElId(): string {
+  return `el_${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function applyMotionPreset(
+  dispatch: (op: EditorOperation) => void,
+  project: ReturnType<typeof useEditorStore.getState>["project"],
+  sceneId: string,
+  elementId: string,
+  key: MotionPresetKey
+) {
+  const track = project.timelineTracks.find((t) => t.sceneId === sceneId);
+  dispatch({
+    operation: "set_element_motion_preset",
+    sceneId,
+    elementId,
+    motionPreset: key,
+    animations: buildPresetAnimations(key, track?.durationMs)
+  });
+}
+
+export default function App() {
+  const project = useEditorStore((s) => s.project);
+  const selectedSceneId = useEditorStore((s) => s.selectedSceneId);
+  const timeline = useEditorStore((s) => s.timeline);
+  const playback = useEditorStore((s) => s.playback);
+  const selectScene = useEditorStore((s) => s.selectScene);
+  const syncSelectedScene = useEditorStore((s) => s.syncSelectedScene);
+  const selectElement = useEditorStore((s) => s.selectElement);
+  const setCurrentTime = useEditorStore((s) => s.setCurrentTime);
+  const setPlayback = useEditorStore((s) => s.setPlayback);
+  const togglePlayback = useEditorStore((s) => s.togglePlayback);
+  const showAllElements = useEditorStore((s) => s.showAllElements);
+  const toggleShowAllElements = useEditorStore((s) => s.toggleShowAllElements);
+  const dispatchOperation = useEditorStore((s) => s.dispatchOperation);
+  const updateElement = useEditorStore((s) => s.updateElement);
+  const deleteElement = useEditorStore((s) => s.deleteElement);
+  const addScene = useEditorStore((s) => s.addScene);
+  const updateScene = useEditorStore((s) => s.updateScene);
   const selectedScene = useSelectedScene();
   const selectedElement = useSelectedElement();
-  const frame = resolveRenderFrame(project, { timeMs: timeline.currentTimeMs });
+
+  const leftSidebarCollapsed = useEditorLayoutStore((s) => s.leftSidebarCollapsed);
+  const rightInspectorCollapsed = useEditorLayoutStore((s) => s.rightInspectorCollapsed);
+  const bottomTimelineCollapsed = useEditorLayoutStore((s) => s.bottomTimelineCollapsed);
+  const rightInspectorWidth = useEditorLayoutStore((s) => s.rightInspectorWidth);
+  const bottomTimelineHeight = useEditorLayoutStore((s) => s.bottomTimelineHeight);
+  const toggleLeftSidebar = useEditorLayoutStore((s) => s.toggleLeftSidebar);
+  const toggleRightInspector = useEditorLayoutStore((s) => s.toggleRightInspector);
+  const toggleBottomTimeline = useEditorLayoutStore((s) => s.toggleBottomTimeline);
+
+  const [activeTool, setActiveTool] = useState<SidebarTool>(null);
+  const [inspectorTab, setInspectorTab] = useState<"element" | "scene">("element");
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const frame = resolveRenderFrame(project, { timeMs: timeline.currentTimeMs, showAllElements });
   const errors = validateProjectDocument(project);
-  const timelineRef = useRef(
-    new TimelineEngine({
-      durationMs: timeline.durationMs,
-      currentTimeMs: timeline.currentTimeMs,
-      loop: false
-    })
+
+  const timelineEngineRef = useRef(
+    new TimelineEngine({ durationMs: timeline.durationMs, currentTimeMs: timeline.currentTimeMs, loop: false })
   );
   const playbackRef = useRef(playback.isPlaying);
-  const [isAddElementOpen, setIsAddElementOpen] = useState(false);
-  const [dragSceneIndex, setDragSceneIndex] = useState<number | null>(null);
-  const [dropSceneIndex, setDropSceneIndex] = useState<number | null>(null);
-
   playbackRef.current = playback.isPlaying;
 
-  useEffect(() => {
-    timelineRef.current.setDuration(timeline.durationMs);
-  }, [timeline.durationMs]);
+  useEffect(() => { timelineEngineRef.current.setDuration(timeline.durationMs); }, [timeline.durationMs]);
 
   useEffect(() => {
-    if (Math.abs(timelineRef.current.currentTimeMs - timeline.currentTimeMs) > 1) {
-      timelineRef.current.seek(timeline.currentTimeMs);
+    if (Math.abs(timelineEngineRef.current.currentTimeMs - timeline.currentTimeMs) > 1) {
+      timelineEngineRef.current.seek(timeline.currentTimeMs);
     }
   }, [timeline.currentTimeMs]);
 
   useEffect(() => {
-    if (playback.isPlaying) {
-      timelineRef.current.play();
-    } else {
-      timelineRef.current.pause();
-    }
+    if (playback.isPlaying) timelineEngineRef.current.play();
+    else timelineEngineRef.current.pause();
   }, [playback.isPlaying]);
 
   useEffect(() => {
-    if (frame.sceneId && frame.sceneId !== selectedSceneId) {
-      syncSelectedScene(frame.sceneId);
-    }
+    if (frame.sceneId && frame.sceneId !== selectedSceneId) syncSelectedScene(frame.sceneId);
   }, [frame.sceneId, selectedSceneId, syncSelectedScene]);
 
   useEffect(() => {
     let frameId = 0;
-    let previousTimestamp = performance.now();
-
-    const step = (timestamp: number) => {
-      const deltaMs = timestamp - previousTimestamp;
-      previousTimestamp = timestamp;
-
+    let prev = performance.now();
+    const step = (ts: number) => {
+      const delta = ts - prev;
+      prev = ts;
       if (playbackRef.current) {
-        const nextTimeMs = timelineRef.current.tick(deltaMs);
-        setCurrentTime(nextTimeMs);
-        if (!timelineRef.current.isPlaying) {
-          setPlayback(false);
-        }
+        const next = timelineEngineRef.current.tick(delta);
+        setCurrentTime(next);
+        if (!timelineEngineRef.current.isPlaying) setPlayback(false);
       }
-
-      frameId = window.requestAnimationFrame(step);
+      frameId = requestAnimationFrame(step);
     };
-
-    frameId = window.requestAnimationFrame(step);
-
-    return () => {
-      window.cancelAnimationFrame(frameId);
-    };
+    frameId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frameId);
   }, [setCurrentTime, setPlayback]);
 
+  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    Array.from(e.target.files ?? []).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const src = ev.target?.result as string;
+        if (src) setUploadedImages((prev) => [src, ...prev]);
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = "";
+  }
+
+  function addImageToCanvas(src: string) {
+    const elementId = nextElId();
+    dispatchOperation({ operation: "add_element", sceneId: selectedSceneId, elementId, type: "image", content: { src, label: "Image" } });
+  }
+
+  function addShape(variant: "rectangle" | "square") {
+    const elementId = nextElId();
+    dispatchOperation({
+      operation: "add_element",
+      sceneId: selectedSceneId,
+      elementId,
+      type: "shape",
+      content: { shape: "rectangle", label: variant === "square" ? "Square" : "Rectangle" }
+    });
+    if (variant === "square") {
+      dispatchOperation({ operation: "patch_element", sceneId: selectedSceneId, elementId, patch: { layout: { width: 200, height: 200 } } });
+    }
+  }
+
+  function toggleTool(tool: SidebarTool) {
+    setActiveTool((prev) => (prev === tool ? null : tool));
+  }
+
+  // ── Computed sidebar width ────────────────────────────────────────────────
+  const sidebarWidth = leftSidebarCollapsed ? 0 : ICON_RAIL_WIDTH + EXPANSION_WIDTH;
+  const inspectorWidth = rightInspectorCollapsed ? 0 : rightInspectorWidth;
+  const timelineHeight = bottomTimelineCollapsed ? 0 : bottomTimelineHeight;
+
   return (
-    <div className="app-shell">
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">Phase 1</p>
-          <h1>Semantic Video Engine</h1>
-        </div>
-        <div className="topbar-meta">
-          <span>Deterministic frame contract</span>
-          <strong>{timeline.durationMs / 1000}s vertical reel</strong>
-        </div>
-      </header>
+    <Box style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", background: "#edf0f5" }}>
+      {/* ── Toolbar ── */}
+      <Box style={{ height: tokens.panelSizes.toolbar, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 12px", borderBottom: "1px solid rgba(0,0,0,0.07)", background: "#ffffff" }}>
+        <Group gap={8} wrap="nowrap">
+          <Box p={6} style={{ borderRadius: 8, background: "linear-gradient(135deg,rgba(255,173,92,0.18),rgba(255,120,84,0.09))", color: "#c9520a", flexShrink: 0 }}>
+            <IconSparkles size={15} />
+          </Box>
+          <Text c="gray.9" fw={700} fz="sm">{project.name}</Text>
+          <Badge color={errors.length > 0 ? "red" : "teal"} variant="light" size="xs">
+            {errors.length > 0 ? `${errors.length} issue${errors.length === 1 ? "" : "s"}` : "healthy"}
+          </Badge>
+        </Group>
 
-      <main className="workspace">
-        <section className="panel left-panel">
-          <button
-            className={`add-element-trigger${isAddElementOpen ? " active" : ""}`}
-            onClick={() => setIsAddElementOpen(!isAddElementOpen)}
-            title="Add Element"
+        <Group gap={6}>
+          <Tooltip label={showAllElements ? "Show timed elements" : "Show all elements"} position="bottom" withArrow>
+            <ActionIcon
+              variant={showAllElements ? "filled" : "light"}
+              color={showAllElements ? "violet" : "gray"}
+              size="sm"
+              onClick={toggleShowAllElements}
+            >
+              {showAllElements ? <IconEyeOff size={13} /> : <IconEye size={13} />}
+            </ActionIcon>
+          </Tooltip>
+          <Divider orientation="vertical" />
+          <ActionIcon
+            variant={playback.isPlaying ? "filled" : "light"}
+            color={playback.isPlaying ? "orange" : "gray"}
+            size="sm"
+            onClick={() => { if (!playback.isPlaying) togglePlayback(); }}
           >
-            <span className="add-element-icon">+</span>
-            <span className="add-element-label">Add</span>
-          </button>
-        </section>
+            <IconPlayerPlayFilled size={13} />
+          </ActionIcon>
+          <ActionIcon
+            variant={!playback.isPlaying ? "filled" : "light"}
+            color="gray"
+            size="sm"
+            onClick={() => { if (playback.isPlaying) togglePlayback(); }}
+          >
+            <IconPlayerPauseFilled size={13} />
+          </ActionIcon>
+          <ActionIcon variant="light" color="gray" size="sm" onClick={() => { if (playback.isPlaying) togglePlayback(); setCurrentTime(0); }}>
+            <IconPlayerStopFilled size={13} />
+          </ActionIcon>
+        </Group>
 
-        <div className={`options-panel${isAddElementOpen ? " open" : ""}`}>
-          <div className="overlay-header">
-            <span>Add Element</span>
-            <button className="overlay-close" onClick={() => setIsAddElementOpen(false)}>×</button>
-          </div>
-          <button className="add-el-btn" onClick={() => addElement(selectedSceneId ?? project.scenes[0]?.id, 'text')}>
-            Text
-          </button>
-          <button className="add-el-btn" onClick={() => addElement(selectedSceneId ?? project.scenes[0]?.id, 'shape')}>
-            Rectangle
-          </button>
-          <button className="add-el-btn" onClick={() => addElement(selectedSceneId ?? project.scenes[0]?.id, 'image')}>
-            Image
-          </button>
-        </div>
+        <Group gap={4}>
+          <ActionIcon variant={leftSidebarCollapsed ? "filled" : "subtle"} color="gray" size="sm" onClick={toggleLeftSidebar} title="Toggle sidebar">
+            <IconLayoutSidebarLeftCollapse size={14} />
+          </ActionIcon>
+          <ActionIcon variant={bottomTimelineCollapsed ? "filled" : "subtle"} color="gray" size="sm" onClick={toggleBottomTimeline} title="Toggle timeline">
+            <IconTimeline size={14} />
+          </ActionIcon>
+          <ActionIcon variant={rightInspectorCollapsed ? "filled" : "subtle"} color="gray" size="sm" onClick={toggleRightInspector} title="Toggle inspector">
+            <IconLayoutSidebarRightCollapse size={14} />
+          </ActionIcon>
+        </Group>
+      </Box>
 
-        <section className="panel preview-panel">
-          <div className="phone-frame" style={{ marginTop: 0 }}>
+      {/* ── Middle row: sidebar + canvas + inspector ── */}
+      <Box style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+        {/* Left sidebar */}
+        {!leftSidebarCollapsed && (
+          <Box style={{ width: sidebarWidth, flexShrink: 0, display: "flex", borderRight: "1px solid rgba(0,0,0,0.07)", background: "#ffffff", overflow: "hidden" }}>
+            {/* Icon rail */}
+            <Box style={{ width: ICON_RAIL_WIDTH, flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 8, gap: 4 }}>
+              <Tooltip label="Elements" position="right" withArrow>
+                <ActionIcon
+                  variant={activeTool === "elements" ? "filled" : "subtle"}
+                  color={activeTool === "elements" ? "orange" : "gray"}
+                  size="xl"
+                  radius="md"
+                  onClick={() => toggleTool("elements")}
+                >
+                  <IconRectangle size={20} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label="Text" position="right" withArrow>
+                <ActionIcon
+                  variant={activeTool === "text" ? "filled" : "subtle"}
+                  color={activeTool === "text" ? "orange" : "gray"}
+                  size="xl"
+                  radius="md"
+                  onClick={() => toggleTool("text")}
+                >
+                  <IconTextSize size={20} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label="Images" position="right" withArrow>
+                <ActionIcon
+                  variant={activeTool === "images" ? "filled" : "subtle"}
+                  color={activeTool === "images" ? "orange" : "gray"}
+                  size="xl"
+                  radius="md"
+                  onClick={() => toggleTool("images")}
+                >
+                  <IconPhoto size={20} />
+                </ActionIcon>
+              </Tooltip>
+            </Box>
+
+            {/* Expansion panel — always rendered to keep player position stable */}
+            <Box style={{ width: EXPANSION_WIDTH, display: "flex", flexDirection: "column", borderLeft: "1px solid rgba(0,0,0,0.07)", overflow: "hidden" }}>
+              {activeTool && (
+                <Box style={{ padding: "8px 10px 6px", borderBottom: "1px solid rgba(0,0,0,0.07)", flexShrink: 0 }}>
+                  <Text fz="xs" fw={700} tt="uppercase" lts="0.08em" c="gray.5">
+                    {activeTool === "elements" ? "Elements" : activeTool === "text" ? "Text" : "Images"}
+                  </Text>
+                </Box>
+              )}
+              <ScrollArea style={{ flex: 1 }}>
+                {activeTool === "elements" && (
+                  <Stack gap={6} p={8}>
+                    <ShapeCard label="Rectangle" onClick={() => addShape("rectangle")} preview={{ w: 48, h: 32 }} />
+                    <ShapeCard label="Square" onClick={() => addShape("square")} preview={{ w: 32, h: 32 }} />
+                  </Stack>
+                )}
+
+                {activeTool === "text" && (
+                  <Stack gap={6} p={8}>
+                    <Box
+                      style={{ padding: "12px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", cursor: "pointer" }}
+                      onClick={() => {
+                        const elementId = nextElId();
+                        dispatchOperation({
+                          operation: "add_element",
+                          sceneId: selectedSceneId,
+                          elementId,
+                          type: "text",
+                          semanticRole: "section_title",
+                          content: { text: "Title" },
+                          style: { fontSize: 80, color: "#000000", fontWeight: "700" },
+                          layout: { width: 600, height: 100 },
+                        });
+                      }}
+                    >
+                      <Text fz={22} fw={700} c="dark.0" lh={1.2}>Add a Title</Text>
+                      <Text fz="xs" c="gray.5" mt={4}>80px · Bold · Black</Text>
+                    </Box>
+
+                    <Box
+                      style={{ padding: "12px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", cursor: "pointer" }}
+                      onClick={() => {
+                        const elementId = nextElId();
+                        dispatchOperation({
+                          operation: "add_element",
+                          sceneId: selectedSceneId,
+                          elementId,
+                          type: "text",
+                          semanticRole: "body_copy",
+                          content: { text: "Add your text" },
+                          style: { fontSize: 40, color: "#ffffff", fontWeight: "400" },
+                          layout: { width: 500, height: 60 },
+                        });
+                      }}
+                    >
+                      <Text fz={14} fw={400} c="gray.3" lh={1.2}>Add a Text</Text>
+                      <Text fz="xs" c="gray.5" mt={4}>40px · Regular · White</Text>
+                    </Box>
+                  </Stack>
+                )}
+
+                {activeTool === "images" && (
+                  <Stack gap={8} p={8}>
+                    <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={handleImageUpload} />
+                    <Button
+                      fullWidth
+                      variant="light"
+                      color="orange"
+                      size="sm"
+                      leftSection={<IconUpload size={14} />}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      Upload Image
+                    </Button>
+                    {uploadedImages.length === 0 ? (
+                      <Text c="gray.5" fz="xs" ta="center" pt={4}>No images uploaded yet.</Text>
+                    ) : (
+                      <SimpleGrid cols={2} spacing={4}>
+                        {uploadedImages.map((src, i) => (
+                          <Box
+                            key={i}
+                            style={{ aspectRatio: "1", borderRadius: 6, overflow: "hidden", cursor: "pointer", border: "1px solid rgba(0,0,0,0.09)" }}
+                            onClick={() => addImageToCanvas(src)}
+                          >
+                            <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                          </Box>
+                        ))}
+                      </SimpleGrid>
+                    )}
+                  </Stack>
+                )}
+              </ScrollArea>
+            </Box>
+          </Box>
+        )}
+
+        {/* Canvas */}
+        <Box style={{ flex: 1, overflow: "hidden" }}>
+          <Box className="editor-canvas-frame" style={{ height: "100%", borderRadius: 0, border: "none" }}>
             <PreviewCanvas
               project={project}
               timeMs={timeline.currentTimeMs}
+              showAllElements={showAllElements}
               selectedElementId={selectedElement?.id}
               onUpdateElement={(id, updates) => {
-                if (selectedScene) {
-                  updateElement(selectedScene.id, id, updates);
-                }
+                if (selectedScene) updateElement(selectedScene.id, id, updates);
               }}
               onSelectElement={(id) => {
-                if (selectedScene) {
-                  selectElement(selectedScene.id, id || "");
-                }
+                if (selectedScene) selectElement(selectedScene.id, id || "");
               }}
             />
-          </div>
-          <div className="transport-controls">
-            <button
-              className={`transport-btn${!playback.isPlaying ? " active" : ""}`}
-              onClick={() => { if (!playback.isPlaying) togglePlayback(); }}
-              title="Play"
-            >
-              ▶
-            </button>
-            <button
-              className={`transport-btn${playback.isPlaying ? " active" : ""}`}
-              onClick={() => { if (playback.isPlaying) togglePlayback(); }}
-              title="Pause"
-            >
-              ⏸
-            </button>
-            <button
-              className="transport-btn"
-              onClick={() => { if (playback.isPlaying) togglePlayback(); setCurrentTime(0); }}
-              title="Stop"
-            >
-              ■
-            </button>
-          </div>
-          <div className="playback-bar">
-              <input
-                type="range"
-                min={0}
-                max={timeline.durationMs}
-                step={50}
-                value={timeline.currentTimeMs}
-                onChange={(event) => setCurrentTime(Number(event.target.value))}
-              />
-              <div className="time-row">
-                <span>{Math.round(timeline.currentTimeMs)} ms</span>
-                <span>Scene {frame.sceneId ?? "none"}</span>
-              </div>
-            </div>
-        </section>
+          </Box>
+        </Box>
 
-        <section className="panel properties-panel" style={{ gridArea: 'properties' }}>
-          {selectedScene && (
-            <div className="scene-editor">
-              <div className="scene-editor-header">
-                <h3>Scene</h3>
-                <input
-                  className="scene-name-input"
-                  type="text"
-                  value={selectedScene.name}
-                  onChange={(e) => updateScene(selectedScene.id, { name: e.target.value })}
+        {/* Right inspector */}
+        {!rightInspectorCollapsed && (
+          <Box style={{ width: inspectorWidth, flexShrink: 0, borderLeft: "1px solid rgba(0,0,0,0.07)", background: "#ffffff", display: "flex", flexDirection: "column" }}>
+            <Box style={{ padding: "8px 10px 6px", borderBottom: "1px solid rgba(0,0,0,0.07)", flexShrink: 0 }}>
+              <Group justify="space-between">
+                <Group gap={6}>
+                  <IconAdjustmentsHorizontal size={14} color="#c9520a" />
+                  <Text fz="xs" fw={700} tt="uppercase" lts="0.08em" c="gray.5">Inspector</Text>
+                </Group>
+                <SegmentedControl
+                  size="xs"
+                  data={[
+                    { label: 'Element', value: 'element' },
+                    { label: 'Scene', value: 'scene' }
+                  ]}
+                  value={inspectorTab}
+                  onChange={(val) => setInspectorTab(val as "element" | "scene")}
+                  styles={{ root: { backgroundColor: 'transparent' } }}
                 />
-              </div>
-              <div className="scene-editor-row">
-                <label className="scene-bg-label">
-                  Background
-                  <div className="color-row">
-                    <input
-                      type="color"
-                      value={selectedScene.backgroundColor ?? "#ffffff"}
-                      onChange={(e) => updateScene(selectedScene.id, { backgroundColor: e.target.value })}
-                    />
-                    <span className="color-hex">{selectedScene.backgroundColor ?? "#ffffff"}</span>
-                  </div>
-                </label>
-                <label className="scene-dur-label">
-                  Duration
-                  <div className="dur-row">
-                    <input
-                      type="number"
-                      min={1}
-                      step={1}
-                      value={Math.round(selectedScene.durationMs / 1000)}
-                      onChange={(e) => updateSceneDuration(selectedScene.id, Number(e.target.value) * 1000)}
-                    />
-                    <span className="dur-unit">s</span>
-                  </div>
-                </label>
-              </div>
-            </div>
-          )}
-
-          <div className="section-block">
-            <h3>Elements</h3>
-            <div className="element-list">
-              {selectedScene?.elements.map((element) => (
-                <button
-                  key={element.id}
-                  className={
-                    selectedElementIds.includes(element.id)
-                      ? "element-item active"
-                      : "element-item"
-                  }
-                  onClick={() => selectElement(selectedScene.id, element.id)}
-                >
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flex: 1 }}>
-                    <strong>{element.semanticRole ?? element.type}</strong>
-                    <span style={{ color: '#94a3b8', fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{element.id}</span>
-                  </div>
-                  <button
-                    className="delete-btn"
-                    onClick={(e) => { e.stopPropagation(); deleteElement(selectedScene.id, element.id); }}
-                    title="Delete element"
-                  >
-                    ×
-                  </button>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {selectedScene && selectedElement ? (
-            <div className="inspector-form">
-              {selectedElement.type === "text" && (
-                <>
-                  <label>
-                    Text
-                    <textarea
-                      value={selectedElement.content?.text ?? ""}
-                      onChange={(event) =>
-                        updateElement(selectedScene.id, selectedElement.id, {
-                          content: {
-                            ...selectedElement.content,
-                            text: event.target.value
-                          }
-                        })
-                      }
-                    />
-                  </label>
-
-                  <div className="text-style-controls" style={{ display: 'grid', gap: 8, marginTop: 8 }}>
-                    <label>
-                      Font
-                      <select
-                        value={selectedElement.style.fontFamily ?? "Inter"}
-                        onChange={(e) =>
-                          updateElement(selectedScene.id, selectedElement.id, {
-                            style: { fontFamily: e.target.value }
-                          })
-                        }
-                      >
-                        <option value="Inter">Inter</option>
-                        <option value="Space Grotesk">Space Grotesk</option>
-                        <option value="Roboto">Roboto</option>
-                        <option value="Georgia">Georgia</option>
-                        <option value="Arial">Arial</option>
-                      </select>
-                    </label>
-
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <label style={{ flex: 1 }}>
-                        Size
-                        <input
-                          type="number"
-                          min={8}
-                          step={1}
-                          value={selectedElement.style.fontSize ?? 48}
-                          onChange={(e) =>
-                            updateElement(selectedScene.id, selectedElement.id, {
-                              style: { fontSize: Number(e.target.value) }
-                            })
-                          }
-                        />
-                      </label>
-
-                      <label style={{ flex: 1 }}>
-                        Color
-                        <input
-                          type="color"
-                          value={selectedElement.style.color ?? "#f8fafc"}
-                          onChange={(e) =>
-                            updateElement(selectedScene.id, selectedElement.id, {
-                              style: { color: e.target.value }
-                            })
-                          }
-                        />
-                      </label>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <input
-                          type="checkbox"
-                          checked={Number(selectedElement.style.fontWeight ?? 600) >= 700}
-                          onChange={(e) =>
-                            updateElement(selectedScene.id, selectedElement.id, {
-                              style: { fontWeight: e.target.checked ? 700 : 400 }
-                            })
-                          }
-                        />
-                        Bold
-                      </label>
-
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <input
-                          type="checkbox"
-                          checked={(selectedElement.style.fontStyle ?? "normal") === "italic"}
-                          onChange={(e) =>
-                            updateElement(selectedScene.id, selectedElement.id, {
-                              style: { fontStyle: e.target.checked ? "italic" : "normal" }
-                            })
-                          }
-                        />
-                        Italic
-                      </label>
-                    </div>
-                  </div>
-                </>
+              </Group>
+            </Box>
+            <ScrollArea style={{ flex: 1 }} p="sm">
+              {inspectorTab === "scene" && selectedScene ? (
+                <SceneInspector
+                  scene={selectedScene}
+                  onUpdateScene={updateScene}
+                />
+              ) : selectedScene && selectedElement ? (
+                <ElementInspector
+                  selectedSceneId={selectedScene.id}
+                  selectedElement={selectedElement}
+                  project={project}
+                  onUpdateElement={updateElement}
+                  onDispatchOperation={dispatchOperation}
+                  onDelete={() => deleteElement(selectedScene.id, selectedElement.id)}
+                />
+              ) : (
+                <Box style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", paddingTop: 48 }}>
+                  <IconAdjustmentsHorizontal size={28} color="rgba(0,0,0,0.15)" />
+                  <Text c="gray.6" fz="xs" ta="center" mt={8}>
+                    {inspectorTab === "element" ? "Click an element on the canvas to edit its properties." : "No scene selected."}
+                  </Text>
+                </Box>
               )}
+            </ScrollArea>
+          </Box>
+        )}
+      </Box>
 
-              <div className="two-up">
-                <label>
-                  X
-                  <input
-                    type="number"
-                    value={selectedElement.layout.x}
-                    onChange={(event) =>
-                      updateElement(selectedScene.id, selectedElement.id, {
-                        layout: {
-                          x: Number(event.target.value)
-                        }
-                      })
-                    }
-                  />
-                </label>
-                <label>
-                  Y
-                  <input
-                    type="number"
-                    value={selectedElement.layout.y}
-                    onChange={(event) =>
-                      updateElement(selectedScene.id, selectedElement.id, {
-                        layout: {
-                          y: Number(event.target.value)
-                        }
-                      })
-                    }
-                  />
-                </label>
-              </div>
-
-              <div className="two-up">
-                <label>
-                  Width
-                  <input
-                    type="number"
-                    value={selectedElement.layout.width}
-                    onChange={(event) =>
-                      updateElement(selectedScene.id, selectedElement.id, {
-                        layout: {
-                          width: Number(event.target.value)
-                        }
-                      })
-                    }
-                  />
-                </label>
-                <label>
-                  Height
-                  <input
-                    type="number"
-                    value={selectedElement.layout.height}
-                    onChange={(event) =>
-                      updateElement(selectedScene.id, selectedElement.id, {
-                        layout: {
-                          height: Number(event.target.value)
-                        }
-                      })
-                    }
-                  />
-                </label>
-              </div>
-
-              <div className="two-up">
-                <label>
-                  Scale
-                  <input
-                    type="number"
-                    step={0.05}
-                    value={selectedElement.layout.scale}
-                    onChange={(event) =>
-                      updateElement(selectedScene.id, selectedElement.id, {
-                        layout: {
-                          scale: Number(event.target.value)
-                        }
-                      })
-                    }
-                  />
-                </label>
-                <label>
-                  Opacity
-                  <input
-                    type="number"
-                    step={0.05}
-                    min={0}
-                    max={1}
-                    value={selectedElement.layout.opacity}
-                    onChange={(event) =>
-                      updateElement(selectedScene.id, selectedElement.id, {
-                        layout: {
-                          opacity: Number(event.target.value)
-                        }
-                      })
-                    }
-                  />
-                </label>
-              </div>
-            </div>
-          ) : (
-            <p className="empty-state">Select a scene element to edit its semantic state.</p>
-          )}
-
-          {selectedScene && selectedElement && (
-            <div className="section-block animations-block">
-              <div className="anim-section-header">
-                <h3>Animations</h3>
-                <button
-                  className="anim-add-btn"
-                  onClick={() => {
-                    const animId = `anim_${Math.random().toString(36).slice(2, 9)}`;
-                    dispatchOperation({
-                      operation: "add_animation",
-                      sceneId: selectedScene.id,
-                      elementId: selectedElement.id,
-                      animation: { id: animId, type: "fadeIn", startMs: 0, durationMs: 500, easing: "easeOut" }
-                    });
+      {/* ── Timeline ── */}
+      {!bottomTimelineCollapsed && (
+        <Box style={{ height: timelineHeight, flexShrink: 0, borderTop: "1px solid rgba(0,0,0,0.07)", background: "#f5f7fb", display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 12px", gap: 6 }}>
+          {/* Scenes strip */}
+          <Box style={{ display: "flex", alignItems: "center", gap: 6, overflowX: "auto", scrollbarWidth: "none" }}>
+            {project.timelineTracks.map((track) => {
+              const scene = project.scenes.find((s) => s.id === track.sceneId);
+              const active = track.sceneId === selectedSceneId;
+              return (
+                <Box
+                  key={track.id}
+                  onClick={() => selectScene(track.sceneId)}
+                  style={{
+                    flexShrink: 0,
+                    width: 72,
+                    height: 32,
+                    borderRadius: 6,
+                    border: `1px solid ${active ? "rgba(255,173,92,0.45)" : "rgba(0,0,0,0.09)"}`,
+                    background: active ? "rgba(255,173,92,0.12)" : "rgba(0,0,0,0.02)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    padding: "0 6px",
+                    transition: "border-color 0.12s, background 0.12s"
                   }}
                 >
-                  + Add
-                </button>
-              </div>
+                  <Text fz="xs" fw={600} c={active ? "orange.7" : "gray.7"} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
+                    {scene?.name ?? track.sceneId}
+                  </Text>
+                </Box>
+              );
+            })}
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="sm"
+              radius={6}
+              style={{ flexShrink: 0, border: "1px dashed rgba(0,0,0,0.12)", width: 32, height: 32 }}
+              onClick={addScene}
+              title="Add scene"
+            >
+              <IconPlus size={12} />
+            </ActionIcon>
+          </Box>
 
-              <div className="anim-preset-row">
-                <label className="anim-preset-label">
-                  Motion Preset
-                  <select
-                    value={selectedElement.motionPreset ?? ""}
-                    onChange={(e) => {
-                      const key = e.target.value as MotionPresetKey | "";
-                      if (!key) return;
-                      const scene = selectedScene;
-                      const track = project.timelineTracks.find((t) => t.sceneId === scene.id);
-                      const animations = buildPresetAnimations(key, track?.durationMs);
-                      dispatchOperation({
-                        operation: "set_element_motion_preset",
-                        sceneId: scene.id,
-                        elementId: selectedElement.id,
-                        motionPreset: key,
-                        animations
-                      });
-                    }}
-                  >
-                    <option value="">— none —</option>
-                    {(Object.keys(MOTION_PRESETS) as MotionPresetKey[]).map((key) => (
-                      <option key={key} value={key}>{key.replace(/_/g, " ")}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-
-              {selectedElement.animations.length === 0 && (
-                <p className="empty-state" style={{ fontSize: 11 }}>No animations. Add one above or apply a motion preset.</p>
-              )}
-
-              {selectedElement.animations.map((anim) => (
-                <div key={anim.id} className="anim-item">
-                  <div className="anim-item-header">
-                    <span className="anim-item-id">{anim.id}</span>
-                    <button
-                      className="delete-btn"
-                      onClick={() =>
-                        dispatchOperation({
-                          operation: "delete_animation",
-                          sceneId: selectedScene.id,
-                          elementId: selectedElement.id,
-                          animationId: anim.id
-                        })
-                      }
-                    >
-                      ×
-                    </button>
-                  </div>
-                  <div className="anim-item-fields">
-                    <label>
-                      Type
-                      <select
-                        value={anim.type}
-                        onChange={(e) =>
-                          dispatchOperation({
-                            operation: "update_animation",
-                            sceneId: selectedScene.id,
-                            elementId: selectedElement.id,
-                            animationId: anim.id,
-                            patch: { type: e.target.value as AnimationType }
-                          })
-                        }
-                      >
-                        {(["fadeIn","fadeOut","slideUp","slideDown","slideLeft","slideRight","zoomIn","zoomOut","subtitle_pop","kinetic_slide","blur_transition"] as AnimationType[]).map((t) => (
-                          <option key={t} value={t}>{t}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <div className="two-up">
-                      <label>
-                        Start ms
-                        <input
-                          type="number"
-                          min={0}
-                          step={50}
-                          value={anim.startMs}
-                          onChange={(e) =>
-                            dispatchOperation({
-                              operation: "update_animation",
-                              sceneId: selectedScene.id,
-                              elementId: selectedElement.id,
-                              animationId: anim.id,
-                              patch: { startMs: Number(e.target.value) }
-                            })
-                          }
-                        />
-                      </label>
-                      <label>
-                        Duration ms
-                        <input
-                          type="number"
-                          min={50}
-                          step={50}
-                          value={anim.durationMs}
-                          onChange={(e) =>
-                            dispatchOperation({
-                              operation: "update_animation",
-                              sceneId: selectedScene.id,
-                              elementId: selectedElement.id,
-                              animationId: anim.id,
-                              patch: { durationMs: Number(e.target.value) }
-                            })
-                          }
-                        />
-                      </label>
-                    </div>
-                    <label>
-                      Easing
-                      <select
-                        value={anim.easing ?? "linear"}
-                        onChange={(e) =>
-                          dispatchOperation({
-                            operation: "update_animation",
-                            sceneId: selectedScene.id,
-                            elementId: selectedElement.id,
-                            animationId: anim.id,
-                            patch: { easing: e.target.value }
-                          })
-                        }
-                      >
-                        <option value="linear">linear</option>
-                        <option value="easeIn">easeIn</option>
-                        <option value="easeOut">easeOut</option>
-                        <option value="easeInOut">easeInOut</option>
-                      </select>
-                    </label>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {errors.length > 0 && (
-            <div className="section-block errors">
-              <h3>Validation</h3>
-              <pre>{JSON.stringify(errors, null, 2)}</pre>
-            </div>
-          )}
-        </section>
-
-        <div className="scenes-bar">
-          <div className="scenes-scroll">
-            {project.scenes.map((scene, index) => (
-              <button
-                key={scene.id}
-                draggable
-                className={[
-                  "scene-chip",
-                  scene.id === selectedSceneId ? "active" : "",
-                  dropSceneIndex === index && dragSceneIndex !== index ? "drag-over" : ""
-                ].filter(Boolean).join(" ")}
-                onClick={() => selectScene(scene.id)}
-                onDragStart={(e) => { setDragSceneIndex(index); e.dataTransfer.effectAllowed = "move"; }}
-                onDragOver={(e) => { e.preventDefault(); setDropSceneIndex(index); }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  if (dragSceneIndex !== null && dragSceneIndex !== index) reorderScenes(dragSceneIndex, index);
-                  setDragSceneIndex(null);
-                  setDropSceneIndex(null);
-                }}
-                onDragEnd={() => { setDragSceneIndex(null); setDropSceneIndex(null); }}
-              >
-                <span className="scene-chip-name">{scene.name}</span>
-                <span className="scene-chip-dur">{Math.round(scene.durationMs / 1000)}s · {scene.elements.length} el</span>
-                <button
-                  className="delete-btn"
-                  onClick={(e) => { e.stopPropagation(); deleteScene(scene.id); }}
-                  disabled={project.scenes.length <= 1}
-                  title="Delete scene"
-                >
-                  ×
-                </button>
-              </button>
-            ))}
-            <button className="scene-chip add-chip" onClick={addScene}>+ Scene</button>
-          </div>
-        </div>
-      </main>
-    </div>
+          {/* Scrubber */}
+          <Group gap={8} wrap="nowrap">
+            <Text c="gray.6" fz="xs" style={{ flexShrink: 0, minWidth: 52 }}>
+              {formatMs(timeline.currentTimeMs)}
+            </Text>
+            <Slider
+              style={{ flex: 1 }}
+              color="orange"
+              min={0}
+              max={timeline.durationMs}
+              step={50}
+              value={timeline.currentTimeMs}
+              onChange={setCurrentTime}
+              label={null}
+              size="xs"
+            />
+            <Text c="gray.6" fz="xs" style={{ flexShrink: 0 }}>
+              {Math.round(timeline.durationMs / 1000)}s
+            </Text>
+          </Group>
+        </Box>
+      )}
+    </Box>
   );
 }
 
-export default App;
+// ── Shape card for elements panel ────────────────────────────────────────────
+function ShapeCard({ label, onClick, preview }: {
+  label: string;
+  onClick: () => void;
+  preview: { w: number; h: number };
+}) {
+  return (
+    <Box
+      onClick={onClick}
+      style={{
+        padding: "8px 10px",
+        borderRadius: 8,
+        border: "1px solid rgba(0,0,0,0.08)",
+        background: "rgba(0,0,0,0.02)",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        transition: "background 0.1s, border-color 0.1s"
+      }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,140,50,0.07)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(200,90,10,0.3)"; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.02)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(0,0,0,0.08)"; }}
+    >
+      <Box style={{ width: preview.w, height: preview.h, borderRadius: 3, border: "2px solid rgba(255,173,92,0.45)", background: "rgba(255,173,92,0.08)", flexShrink: 0 }} />
+      <Text fz="sm" fw={500} c="gray.8">{label}</Text>
+    </Box>
+  );
+}
+
+// ── Element inspector ─────────────────────────────────────────────────────────
+interface ElementInspectorProps {
+  selectedSceneId: string;
+  selectedElement: ElementNode;
+  project: ReturnType<typeof useEditorStore.getState>["project"];
+  onUpdateElement: (sceneId: string, elementId: string, patch: ElementPatch) => void;
+  onDispatchOperation: (op: EditorOperation) => void;
+  onDelete: () => void;
+}
+
+function ElementInspector({ selectedSceneId, selectedElement, project, onUpdateElement, onDispatchOperation, onDelete }: ElementInspectorProps) {
+  const [showDimensions, setShowDimensions] = useState(false);
+
+  return (
+    <Stack gap="md" pt={4}>
+      <Group justify="space-between" wrap="nowrap">
+        <Group gap={6} wrap="nowrap">
+          <Badge variant="light" color="orange" size="sm">{selectedElement.type}</Badge>
+          <Text c="gray.7" fz="xs" fw={600} tt="uppercase" lts="0.06em" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {selectedElement.semanticRole ?? selectedElement.type}
+          </Text>
+        </Group>
+        <ActionIcon variant="subtle" color="red" size="sm" onClick={onDelete} title="Delete element">
+          <IconTrash size={13} />
+        </ActionIcon>
+      </Group>
+
+      {selectedElement.type === "text" && (
+        <>
+          <InspectorField
+            label="Text"
+            input={
+              <Textarea
+                autosize
+                minRows={2}
+                value={selectedElement.content?.text ?? ""}
+                onChange={(e) => onUpdateElement(selectedSceneId, selectedElement.id, { content: { ...selectedElement.content, text: e.currentTarget.value } })}
+              />
+            }
+          />
+          <SimpleGrid cols={2} spacing="xs">
+            <InspectorField
+              label="Font"
+              input={
+                <Select
+                  data={["DM Sans", "Space Grotesk", "IBM Plex Sans", "Manrope"]}
+                  value={selectedElement.style.fontFamily ?? "DM Sans"}
+                  onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { style: { fontFamily: v ?? "DM Sans" } })}
+                />
+              }
+            />
+            <InspectorField
+              label="Size"
+              input={
+                <NumberInput
+                  min={8}
+                  value={selectedElement.style.fontSize ?? 48}
+                  onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { style: { fontSize: toNumber(v, selectedElement.style.fontSize ?? 48) } })}
+                />
+              }
+            />
+          </SimpleGrid>
+          <SimpleGrid cols={2} spacing="xs">
+            <InspectorField
+              label="Color"
+              input={
+                <ColorInput
+                  format="hex"
+                  value={selectedElement.style.color ?? "#f8fafc"}
+                  onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { style: { color: v } })}
+                />
+              }
+            />
+            <InspectorField
+              label="BG"
+              input={
+                <ColorInput
+                  format="hex"
+                  value={selectedElement.style.backgroundColor ?? "#000000"}
+                  onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { style: { backgroundColor: v } })}
+                />
+              }
+            />
+          </SimpleGrid>
+          <Group grow>
+            <Switch
+              label="Bold"
+              size="xs"
+              checked={Number(selectedElement.style.fontWeight ?? 600) >= 700}
+              onChange={(e) => onUpdateElement(selectedSceneId, selectedElement.id, { style: { fontWeight: e.currentTarget.checked ? 700 : 400 } })}
+            />
+            <Switch
+              label="Italic"
+              size="xs"
+              checked={(selectedElement.style.fontStyle ?? "normal") === "italic"}
+              onChange={(e) => onUpdateElement(selectedSceneId, selectedElement.id, { style: { fontStyle: e.currentTarget.checked ? "italic" : "normal" } })}
+            />
+          </Group>
+        </>
+      )}
+
+      <Divider color="rgba(0,0,0,0.08)" />
+
+      <Stack gap="xs">
+        <Group justify="space-between">
+          <Text c="gray.5" fz="xs" fw={700} tt="uppercase" lts="0.06em">Layout</Text>
+          <Button variant="subtle" color="gray" size="compact-xs" onClick={() => setShowDimensions((v) => !v)}>
+            {showDimensions ? "Hide" : "Dimensions"}
+          </Button>
+        </Group>
+        {showDimensions && (
+          <SimpleGrid cols={2} spacing="xs">
+            <InspectorField label="X" input={<NumberInput value={selectedElement.layout.x} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { x: toNumber(v, selectedElement.layout.x) } })} />} />
+            <InspectorField label="Y" input={<NumberInput value={selectedElement.layout.y} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { y: toNumber(v, selectedElement.layout.y) } })} />} />
+            <InspectorField label="W" input={<NumberInput min={1} value={selectedElement.layout.width} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { width: toNumber(v, selectedElement.layout.width) } })} />} />
+            <InspectorField label="H" input={<NumberInput min={1} value={selectedElement.layout.height} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { height: toNumber(v, selectedElement.layout.height) } })} />} />
+          </SimpleGrid>
+        )}
+        <SimpleGrid cols={2} spacing="xs">
+          <InspectorField label="Scale" input={<NumberInput min={0.1} step={0.05} value={selectedElement.layout.scale} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { scale: toNumber(v, selectedElement.layout.scale) } })} />} />
+          <InspectorField label="Opacity" input={<NumberInput min={0} max={1} step={0.05} value={selectedElement.layout.opacity} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { opacity: toNumber(v, selectedElement.layout.opacity) } })} />} />
+        </SimpleGrid>
+      </Stack>
+
+      <Divider color="rgba(0,0,0,0.08)" />
+
+      <Stack gap="xs">
+        <Group justify="space-between">
+          <Text c="gray.5" fz="xs" fw={700} tt="uppercase" lts="0.06em">Motion</Text>
+          <Button
+            variant="light"
+            color="teal"
+            size="compact-xs"
+            leftSection={<IconPlus size={11} />}
+            onClick={() =>
+              onDispatchOperation({
+                operation: "add_animation",
+                sceneId: selectedSceneId,
+                elementId: selectedElement.id,
+                animation: { id: `anim_${Math.random().toString(36).slice(2, 9)}`, type: "fadeIn", startMs: 0, durationMs: 500, easing: "easeOut" }
+              })
+            }
+          >
+            Add
+          </Button>
+        </Group>
+        <InspectorField
+          label="Preset"
+          input={
+            <Select
+              data={motionPresetKeys.map((k) => ({ value: k, label: humanizePreset(k) }))}
+              value={selectedElement.motionPreset ?? null}
+              placeholder="Choose preset"
+              onChange={(v) => { if (v) applyMotionPreset(onDispatchOperation, project, selectedSceneId, selectedElement.id, v as MotionPresetKey); }}
+            />
+          }
+        />
+        <Stack gap={4}>
+          {selectedElement.animations.map((a) => (
+            <AnimationRow key={a.id} animation={a} />
+          ))}
+          {selectedElement.animations.length === 0 && (
+            <Text c="gray.6" fz="xs">No animations yet.</Text>
+          )}
+        </Stack>
+      </Stack>
+    </Stack>
+  );
+}
+
+function AnimationRow({ animation }: { animation: { type: AnimationType; startMs: number; durationMs: number } }) {
+  return (
+    <Group
+      justify="space-between"
+      style={{ padding: "8px 10px", borderRadius: 6, border: "1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)" }}
+    >
+      <div>
+        <Text fw={600} fz="xs">{animation.type}</Text>
+        <Text c="gray.5" fz="xs">@{animation.startMs}ms</Text>
+      </div>
+      <Badge variant="light" color="teal" size="xs">{Math.round(animation.durationMs / 1000)}s</Badge>
+    </Group>
+  );
+}
+
+// ── Scene inspector ───────────────────────────────────────────────────────────
+
+interface SceneInspectorProps {
+  scene: Scene;
+  onUpdateScene: (sceneId: string, patch: { name?: string; backgroundColor?: string }) => void;
+}
+
+function SceneInspector({ scene, onUpdateScene }: SceneInspectorProps) {
+  return (
+    <Stack gap="md" pt={4}>
+      <Group justify="space-between" wrap="nowrap">
+        <Group gap={6} wrap="nowrap">
+          <Badge variant="light" color="indigo" size="sm">Scene</Badge>
+          <Text c="gray.7" fz="xs" fw={600} tt="uppercase" lts="0.06em" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {scene.name}
+          </Text>
+        </Group>
+      </Group>
+
+      <InspectorField
+        label="BG Color"
+        input={
+          <ColorInput
+            format="hex"
+            value={scene.backgroundColor ?? "#ffffff"}
+            onChange={(v) => onUpdateScene(scene.id, { backgroundColor: v })}
+          />
+        }
+      />
+    </Stack>
+  );
+}

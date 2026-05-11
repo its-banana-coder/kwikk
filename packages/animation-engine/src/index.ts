@@ -54,11 +54,13 @@ function resolveAnimationWindow(animation: Animation): { startMs: number; endMs:
   };
 }
 
-export function resolveAnimatedLayout(element: ElementNode, timeMs: number): LayoutProps {
+export function resolveAnimatedLayout(element: ElementNode, timeMs: number, showAllElements?: boolean): LayoutProps {
   const layout: LayoutProps = {
     ...element.layout,
     ...element.overrides?.layout
   };
+
+  if (showAllElements) return layout;
 
   const baseX = layout.x;
   const baseY = layout.y;
@@ -172,7 +174,7 @@ export function buildPresetAnimations(
   }));
 }
 
-export function resolveElementNodeAtTime(element: ElementNode, timeMs: number): ElementNode {
+export function resolveElementNodeAtTime(element: ElementNode, timeMs: number, showAllElements?: boolean): ElementNode {
   return {
     ...element,
     style: {
@@ -183,6 +185,6 @@ export function resolveElementNodeAtTime(element: ElementNode, timeMs: number): 
       ...element.content,
       ...element.overrides?.content
     },
-    layout: resolveAnimatedLayout(element, timeMs)
+    layout: resolveAnimatedLayout(element, timeMs, showAllElements)
   };
 }

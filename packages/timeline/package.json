@@ -7,8 +7,8 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@kwikk/scene-graph": "*",
-    "@kwikk/shared-types": "*"
+    "@kwikk/scene-graph": "workspace:*",
+    "@kwikk/shared-types": "workspace:*"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

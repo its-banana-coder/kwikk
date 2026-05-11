@@ -329,7 +329,7 @@ export function createPrototypeProject(): ProjectDocument {
       id: "scene_hook",
       name: "Hook",
       durationMs: 5000,
-      backgroundColor: "#0f172a",
+      backgroundColor: "#ffffff",
       elements: [
         createElementNode({
           id: "hook_backdrop",
@@ -480,7 +480,7 @@ export function createPrototypeProject(): ProjectDocument {
       id: "scene_breakdown",
       name: "Breakdown",
       durationMs: 5000,
-      backgroundColor: "#111827",
+      backgroundColor: "#ffffff",
       elements: [
         createElementNode({
           id: "breakdown_card",
@@ -660,7 +660,7 @@ export function createPrototypeProject(): ProjectDocument {
       id: "scene_cta",
       name: "CTA",
       durationMs: 5000,
-      backgroundColor: "#1e1b4b",
+      backgroundColor: "#ffffff",
       elements: [
         createElementNode({
           id: "cta_backdrop",

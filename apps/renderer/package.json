@@ -9,10 +9,10 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
-    "@kwikk/render-core": "*",
-    "@kwikk/scene-graph": "*",
-    "@kwikk/shared-types": "*",
-    "@kwikk/timeline": "*",
+    "@kwikk/render-core": "workspace:*",
+    "@kwikk/scene-graph": "workspace:*",
+    "@kwikk/shared-types": "workspace:*",
+    "@kwikk/timeline": "workspace:*",
     "pixi.js": "^8.2.6"
   },
   "devDependencies": {

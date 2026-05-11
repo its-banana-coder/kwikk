@@ -3,8 +3,7 @@ import {
   createElementNode,
   createScene,
   createProjectDocument,
-  applyOperation,
-  buildSequentialTimelineTracks
+  applyOperation
 } from "./index";
 
 describe("applyOperation mutations", () => {

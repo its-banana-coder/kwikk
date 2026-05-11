@@ -10,6 +10,7 @@ import { getActiveSceneWindow } from "@kwikk/timeline";
 
 export interface RenderFrameInput {
   timeMs: number;
+  showAllElements?: boolean;
 }
 
 export interface ResolvedRenderFrame {
@@ -160,7 +161,7 @@ export function resolveRenderFrame(
     viewport: project.viewport,
     backgroundColor: active.scene.backgroundColor ?? "#ffffff",
     elements: active.scene.elements
-      .map((element) => resolveElementNodeAtTime(element, active.localTimeMs))
+      .map((element) => resolveElementNodeAtTime(element, active.localTimeMs, input.showAllElements))
       .sort((left, right) => left.layout.zIndex - right.layout.zIndex)
   };
 }

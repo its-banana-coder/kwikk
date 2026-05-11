@@ -9,8 +9,8 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@kwikk/shared-types": "*",
-    "@kwikk/timeline": "*"
+    "@kwikk/shared-types": "workspace:*",
+    "@kwikk/timeline": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.19.1",

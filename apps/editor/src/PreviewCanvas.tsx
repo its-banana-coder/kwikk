@@ -5,16 +5,18 @@ import { useEffect, useRef, useState } from "react";
 interface PreviewCanvasProps {
   project: ProjectDocument;
   timeMs: number;
+  showAllElements?: boolean;
   selectedElementId?: string | null;
   onUpdateElement?: (id: string, updates: { content?: Partial<ElementContent>, layout?: Partial<LayoutProps>, style?: any }) => void;
   onSelectElement?: (id: string | null) => void;
 }
 
-export function PreviewCanvas({ project, timeMs, selectedElementId, onUpdateElement, onSelectElement }: PreviewCanvasProps) {
+export function PreviewCanvas({ project, timeMs, showAllElements, selectedElementId, onUpdateElement, onSelectElement }: PreviewCanvasProps) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const rendererRef = useRef<PixiSceneRenderer | null>(null);
   const latestProjectRef = useRef(project);
   const latestTimeRef = useRef(timeMs);
+  const latestShowAllRef = useRef(showAllElements);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartPos, setDragStartPos] = useState<{ x: number; y: number } | null>(null);
@@ -22,6 +24,7 @@ export function PreviewCanvas({ project, timeMs, selectedElementId, onUpdateElem
 
   latestProjectRef.current = project;
   latestTimeRef.current = timeMs;
+  latestShowAllRef.current = showAllElements;
 
   useEffect(() => {
     const mountNode = mountRef.current;
@@ -39,7 +42,7 @@ export function PreviewCanvas({ project, timeMs, selectedElementId, onUpdateElem
 
     const drawLatestFrame = () => {
       renderer.setProject(latestProjectRef.current);
-      renderer.renderFrame({ timeMs: latestTimeRef.current });
+      renderer.renderFrame({ timeMs: latestTimeRef.current, showAllElements: latestShowAllRef.current });
     };
 
     void renderer.mount(mountNode).then(() => {
@@ -93,10 +96,10 @@ export function PreviewCanvas({ project, timeMs, selectedElementId, onUpdateElem
     }
 
     renderer.setProject(project);
-    renderer.renderFrame({ timeMs });
-  }, [project, timeMs]);
+    renderer.renderFrame({ timeMs, showAllElements });
+  }, [project, timeMs, showAllElements]);
 
-  const frame = resolveRenderFrame(project, { timeMs });
+  const frame = resolveRenderFrame(project, { timeMs, showAllElements });
   const selectedElement = frame.elements.find((e) => e.id === selectedElementId);
   const isEditingText = selectedElement && selectedElement.type === "text";
 
