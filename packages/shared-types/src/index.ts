@@ -5,7 +5,13 @@ export type AnimationType =
   | "fadeOut"
   | "slideUp"
   | "slideDown"
-  | "zoomIn";
+  | "slideLeft"
+  | "slideRight"
+  | "zoomIn"
+  | "zoomOut"
+  | "subtitle_pop"
+  | "kinetic_slide"
+  | "blur_transition";
 
 export type ShapeKind = "rectangle";
 
@@ -54,6 +60,7 @@ export type ElementNode = {
   id: string;
   type: ElementType;
   semanticRole?: string;
+  motionPreset?: string;
   layout: LayoutProps;
   style: StyleProps;
   animations: Animation[];
@@ -88,6 +95,7 @@ export interface ProjectDocument {
   scenes: Scene[];
   timelineTracks: TimelineTrack[];
   viewport: Viewport;
+  brandTheme?: string;
 }
 
 export interface RenderRequest {

@@ -1,20 +1,16 @@
 import { create } from "zustand";
 import {
   createPrototypeProject,
-  updateSceneDuration as updateProjectSceneDuration,
-  updateSceneElement,
-  createElementNode,
   createScene,
-  buildSequentialTimelineTracks
+  applyOperation,
+  type EditorOperation,
+  type ElementPatch
 } from "@kwikk/scene-graph";
 import type {
-  ElementContent,
+  Animation,
   ElementNode,
-  LayoutProps,
-  ManualOverrides,
   ProjectDocument,
-  Scene,
-  StyleProps
+  Scene
 } from "@kwikk/shared-types";
 import { getTimelineDurationMs } from "@kwikk/timeline";
 
@@ -33,12 +29,17 @@ interface EditorState {
   selectedElementIds: string[];
   timeline: TimelineState;
   playback: PlaybackState;
+  operationLog: EditorOperation[];
+
+  dispatchOperation: (op: EditorOperation) => void;
+
   selectScene: (sceneId: string) => void;
   syncSelectedScene: (sceneId: string) => void;
   selectElement: (sceneId: string, elementId: string) => void;
   setCurrentTime: (timeMs: number) => void;
   setPlayback: (isPlaying: boolean) => void;
   togglePlayback: () => void;
+
   updateElement: (sceneId: string, elementId: string, patch: ElementPatch) => void;
   addElement: (sceneId: string, type: ElementNode["type"]) => void;
   deleteElement: (sceneId: string, elementId: string) => void;
@@ -49,51 +50,17 @@ interface EditorState {
   updateSceneDuration: (sceneId: string, durationMs: number) => void;
 }
 
-type ElementPatch = Partial<Omit<ElementNode, "layout" | "style" | "content" | "overrides">> & {
-  layout?: Partial<LayoutProps>;
-  style?: Partial<StyleProps>;
-  content?: Partial<ElementContent>;
-  overrides?: ManualOverrides;
-};
-
-function mergeElementPatch(element: ElementNode, patch: ElementPatch): ElementNode {
-  return {
-    ...element,
-    ...patch,
-    layout: patch.layout
-      ? {
-          ...element.layout,
-          ...patch.layout
-        }
-      : element.layout,
-    style: patch.style
-      ? {
-          ...element.style,
-          ...patch.style
-        }
-      : element.style,
-    content: patch.content
-      ? {
-          ...element.content,
-          ...patch.content
-        }
-      : element.content,
-    overrides: patch.overrides
-      ? {
-          ...element.overrides,
-          ...patch.overrides
-        }
-      : element.overrides
-  };
-}
-
 function getScene(project: ProjectDocument, sceneId: string): Scene | undefined {
   return project.scenes.find((scene) => scene.id === sceneId);
 }
 
+function nextId(prefix: string): string {
+  return `${prefix}_${Math.random().toString(36).slice(2, 9)}`;
+}
+
 const initialProject = createPrototypeProject();
 
-export const useEditorStore = create<EditorState>((set) => ({
+export const useEditorStore = create<EditorState>((set, get) => ({
   project: initialProject,
   selectedSceneId: initialProject.scenes[0]?.id ?? "",
   selectedElementIds: initialProject.scenes[0]?.elements[0]
@@ -103,14 +70,73 @@ export const useEditorStore = create<EditorState>((set) => ({
     currentTimeMs: 0,
     durationMs: getTimelineDurationMs(initialProject.timelineTracks)
   },
-  playback: {
-    isPlaying: false
-  },
+  playback: { isPlaying: false },
+  operationLog: [],
+
+  dispatchOperation: (op) =>
+    set((state) => {
+      const nextProject = applyOperation(state.project, op);
+      const duration = getTimelineDurationMs(nextProject.timelineTracks);
+
+      const base = {
+        project: nextProject,
+        operationLog: [...state.operationLog, op],
+        timeline: {
+          ...state.timeline,
+          durationMs: duration,
+          currentTimeMs: Math.min(state.timeline.currentTimeMs, duration)
+        }
+      };
+
+      switch (op.operation) {
+        case "add_element":
+          return { ...base, selectedSceneId: op.sceneId, selectedElementIds: [op.elementId] };
+
+        case "delete_element": {
+          const updatedScene = nextProject.scenes.find((s) => s.id === op.sceneId);
+          const wasSelected = state.selectedElementIds.includes(op.elementId);
+          return {
+            ...base,
+            selectedElementIds: wasSelected
+              ? updatedScene?.elements[0] ? [updatedScene.elements[0].id] : []
+              : state.selectedElementIds
+          };
+        }
+
+        case "add_scene":
+          return {
+            ...base,
+            selectedSceneId: op.scene.id,
+            selectedElementIds: [],
+            timeline: { durationMs: duration, currentTimeMs: duration - op.scene.durationMs }
+          };
+
+        case "delete_scene": {
+          if (state.selectedSceneId !== op.sceneId) return base;
+          const deletedIndex = state.project.scenes.findIndex((s) => s.id === op.sceneId);
+          const nextScene = nextProject.scenes[Math.min(deletedIndex, nextProject.scenes.length - 1)];
+          return {
+            ...base,
+            selectedSceneId: nextScene?.id ?? "",
+            selectedElementIds: nextScene?.elements[0] ? [nextScene.elements[0].id] : [],
+            timeline: {
+              durationMs: duration,
+              currentTimeMs: Math.min(state.timeline.currentTimeMs, duration)
+            }
+          };
+        }
+
+        default:
+          return base;
+      }
+    }),
+
+  // ─── Selection (pure editor state, no project mutation) ────────────────────
+
   selectScene: (sceneId) =>
     set((state) => {
       const scene = getScene(state.project, sceneId);
-      const track = state.project.timelineTracks.find((item) => item.sceneId === sceneId);
-
+      const track = state.project.timelineTracks.find((t) => t.sceneId === sceneId);
       return {
         selectedSceneId: sceneId,
         selectedElementIds: scene?.elements[0] ? [scene.elements[0].id] : [],
@@ -120,6 +146,7 @@ export const useEditorStore = create<EditorState>((set) => ({
         }
       };
     }),
+
   syncSelectedScene: (sceneId) =>
     set((state) => {
       if (state.selectedSceneId === sceneId) return state;
@@ -129,11 +156,10 @@ export const useEditorStore = create<EditorState>((set) => ({
         selectedElementIds: scene?.elements[0] ? [scene.elements[0].id] : []
       };
     }),
+
   selectElement: (sceneId, elementId) =>
-    set({
-      selectedSceneId: sceneId,
-      selectedElementIds: [elementId]
-    }),
+    set({ selectedSceneId: sceneId, selectedElementIds: [elementId] }),
+
   setCurrentTime: (timeMs) =>
     set((state) => ({
       timeline: {
@@ -141,143 +167,57 @@ export const useEditorStore = create<EditorState>((set) => ({
         currentTimeMs: Math.max(0, Math.min(timeMs, state.timeline.durationMs))
       }
     })),
+
   setPlayback: (isPlaying) =>
-    set((state) => ({
-      playback: {
-        ...state.playback,
-        isPlaying
-      }
-    })),
+    set((state) => ({ playback: { ...state.playback, isPlaying } })),
+
   togglePlayback: () =>
-    set((state) => ({
-      playback: {
-        ...state.playback,
-        isPlaying: !state.playback.isPlaying
-      }
-    })),
+    set((state) => ({ playback: { ...state.playback, isPlaying: !state.playback.isPlaying } })),
+
+  // ─── Convenience wrappers — all route through dispatchOperation ─────────────
+
   updateElement: (sceneId, elementId, patch) =>
-    set((state) => ({
-      project: updateSceneElement(state.project, sceneId, elementId, (element) =>
-        mergeElementPatch(element, patch)
-      )
-    })),
-  addElement: (sceneId, type) =>
-    set((state) => {
-      const targetScene = getScene(state.project, sceneId);
-      if (!targetScene) return state;
+    get().dispatchOperation({ operation: "patch_element", sceneId, elementId, patch }),
 
-      const id = `el_${Math.random().toString(36).slice(2, 9)}`;
-      const newElement = createElementNode({
-        id,
-        type,
-        content:
-          type === "text"
-            ? { text: "New text" }
-            : type === "shape"
-            ? { shape: "rectangle", label: "Rectangle" }
-            : type === "image"
-            ? { src: "placeholder://image", label: "Image placeholder" }
-            : undefined
-      });
+  addElement: (sceneId, type) => {
+    const elementId = nextId("el");
+    const content =
+      type === "text" ? { text: "New text" }
+      : type === "shape" ? { shape: "rectangle" as const, label: "Rectangle" }
+      : type === "image" ? { src: "placeholder://image", label: "Image placeholder" }
+      : undefined;
+    get().dispatchOperation({ operation: "add_element", sceneId, elementId, type, content });
+  },
 
-      return {
-        project: {
-          ...state.project,
-          scenes: state.project.scenes.map((scene) =>
-            scene.id === sceneId ? { ...scene, elements: [...scene.elements, newElement] } : scene
-          )
-        },
-        selectedSceneId: sceneId,
-        selectedElementIds: [id]
-      } as unknown as EditorState;
-    }),
   deleteElement: (sceneId, elementId) =>
-    set((state) => {
-      const scenes = state.project.scenes.map((scene) =>
-        scene.id !== sceneId
-          ? scene
-          : { ...scene, elements: scene.elements.filter((el) => el.id !== elementId) }
-      );
-      const updatedScene = scenes.find((s) => s.id === sceneId);
-      const wasSelected = state.selectedElementIds.includes(elementId);
-      return {
-        project: { ...state.project, scenes },
-        selectedElementIds: wasSelected
-          ? updatedScene?.elements[0] ? [updatedScene.elements[0].id] : []
-          : state.selectedElementIds
-      };
-    }),
-  addScene: () =>
-    set((state) => {
-      const id = `scene_${Math.random().toString(36).slice(2, 9)}`;
-      const newScene = createScene({ id, name: `Scene ${state.project.scenes.length + 1}`, backgroundColor: "#0f172a" });
-      const scenes = [...state.project.scenes, newScene];
-      const tracks = buildSequentialTimelineTracks(scenes);
-      const duration = getTimelineDurationMs(tracks);
-      return {
-        project: { ...state.project, scenes, timelineTracks: tracks },
-        selectedSceneId: id,
-        selectedElementIds: [],
-        timeline: { durationMs: duration, currentTimeMs: duration - newScene.durationMs }
-      };
-    }),
-  deleteScene: (sceneId) =>
-    set((state) => {
-      if (state.project.scenes.length <= 1) return state;
-      const deletedIndex = state.project.scenes.findIndex((s) => s.id === sceneId);
-      const scenes = state.project.scenes.filter((s) => s.id !== sceneId);
-      const tracks = buildSequentialTimelineTracks(scenes);
-      const duration = getTimelineDurationMs(tracks);
-      const nextScene = scenes[Math.min(deletedIndex, scenes.length - 1)];
-      return {
-        project: { ...state.project, scenes, timelineTracks: tracks },
-        selectedSceneId: nextScene?.id ?? "",
-        selectedElementIds: nextScene?.elements[0] ? [nextScene.elements[0].id] : [],
-        timeline: {
-          durationMs: duration,
-          currentTimeMs: Math.min(state.timeline.currentTimeMs, duration)
-        }
-      };
-    }),
-  reorderScenes: (fromIndex, toIndex) =>
-    set((state) => {
-      if (fromIndex === toIndex) return state;
-      const scenes = [...state.project.scenes];
-      const [moved] = scenes.splice(fromIndex, 1);
-      scenes.splice(toIndex, 0, moved);
-      const tracks = buildSequentialTimelineTracks(scenes);
-      const duration = getTimelineDurationMs(tracks);
-      return {
-        project: { ...state.project, scenes, timelineTracks: tracks },
-        timeline: {
-          ...state.timeline,
-          durationMs: duration,
-          currentTimeMs: Math.min(state.timeline.currentTimeMs, duration)
-        }
-      };
-    }),
-  updateScene: (sceneId, patch) =>
-    set((state) => ({
-      project: {
-        ...state.project,
-        scenes: state.project.scenes.map((s) =>
-          s.id !== sceneId ? s : { ...s, ...patch }
-        )
-      }
-    })),
-  updateSceneDuration: (sceneId, durationMs) =>
-    set((state) => {
-      const project = updateProjectSceneDuration(state.project, sceneId, Math.max(1000, durationMs));
-      const duration = getTimelineDurationMs(project.timelineTracks);
+    get().dispatchOperation({ operation: "delete_element", sceneId, elementId }),
 
-      return {
-        project,
-        timeline: {
-          currentTimeMs: Math.min(state.timeline.currentTimeMs, duration),
-          durationMs: duration
-        }
-      };
-    })
+  addScene: () => {
+    const state = get();
+    const id = nextId("scene");
+    const scene = createScene({
+      id,
+      name: `Scene ${state.project.scenes.length + 1}`,
+      backgroundColor: "#0f172a"
+    });
+    get().dispatchOperation({ operation: "add_scene", scene });
+  },
+
+  deleteScene: (sceneId) => {
+    if (get().project.scenes.length <= 1) return;
+    get().dispatchOperation({ operation: "delete_scene", sceneId });
+  },
+
+  reorderScenes: (fromIndex, toIndex) => {
+    if (fromIndex === toIndex) return;
+    get().dispatchOperation({ operation: "reorder_scenes", fromIndex, toIndex });
+  },
+
+  updateScene: (sceneId, patch) =>
+    get().dispatchOperation({ operation: "update_scene", sceneId, patch }),
+
+  updateSceneDuration: (sceneId, durationMs) =>
+    get().dispatchOperation({ operation: "update_scene_duration", sceneId, durationMs })
 }));
 
 export function useSelectedScene(): Scene | undefined {
@@ -291,3 +231,6 @@ export function useSelectedElement(): ElementNode | undefined {
     return scene?.elements.find((element) => element.id === elementId);
   });
 }
+
+export type { EditorOperation, ElementPatch };
+export type { Animation };

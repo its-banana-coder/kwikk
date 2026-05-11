@@ -1,7 +1,10 @@
 import type {
+  Animation,
   ElementContent,
   ElementNode,
+  ElementType,
   LayoutProps,
+  ManualOverrides,
   ProjectDocument,
   Scene,
   StyleProps,
@@ -191,6 +194,133 @@ export function updateSceneDuration(
     scenes,
     timelineTracks: buildSequentialTimelineTracks(scenes)
   };
+}
+
+// ─── Element patch helpers ────────────────────────────────────────────────────
+
+export type ElementPatch = Partial<Omit<ElementNode, "layout" | "style" | "content" | "overrides">> & {
+  layout?: Partial<LayoutProps>;
+  style?: Partial<StyleProps>;
+  content?: Partial<ElementContent>;
+  overrides?: ManualOverrides;
+};
+
+export function mergeElementPatch(element: ElementNode, patch: ElementPatch): ElementNode {
+  return {
+    ...element,
+    ...patch,
+    layout: patch.layout ? { ...element.layout, ...patch.layout } : element.layout,
+    style: patch.style ? { ...element.style, ...patch.style } : element.style,
+    content: patch.content ? { ...element.content, ...patch.content } : element.content,
+    overrides: patch.overrides ? { ...element.overrides, ...patch.overrides } : element.overrides
+  };
+}
+
+// ─── Structured operation types (Principle 6) ────────────────────────────────
+
+export type EditorOperation =
+  | { operation: "patch_element"; sceneId: string; elementId: string; patch: ElementPatch }
+  | { operation: "add_element"; sceneId: string; elementId: string; type: ElementType; content?: ElementContent; semanticRole?: string; layout?: Partial<LayoutProps>; style?: Partial<StyleProps> }
+  | { operation: "delete_element"; sceneId: string; elementId: string }
+  | { operation: "add_animation"; sceneId: string; elementId: string; animation: Animation }
+  | { operation: "update_animation"; sceneId: string; elementId: string; animationId: string; patch: Partial<Omit<Animation, "id">> }
+  | { operation: "delete_animation"; sceneId: string; elementId: string; animationId: string }
+  | { operation: "set_element_motion_preset"; sceneId: string; elementId: string; motionPreset: string | undefined; animations: Animation[] }
+  | { operation: "add_scene"; scene: Scene }
+  | { operation: "delete_scene"; sceneId: string }
+  | { operation: "reorder_scenes"; fromIndex: number; toIndex: number }
+  | { operation: "update_scene"; sceneId: string; patch: { name?: string; backgroundColor?: string } }
+  | { operation: "update_scene_duration"; sceneId: string; durationMs: number }
+  | { operation: "set_brand_theme"; brandTheme: string | undefined };
+
+export function applyOperation(project: ProjectDocument, op: EditorOperation): ProjectDocument {
+  switch (op.operation) {
+    case "patch_element":
+      return updateSceneElement(project, op.sceneId, op.elementId, (el) =>
+        mergeElementPatch(el, op.patch)
+      );
+
+    case "add_element": {
+      const element = createElementNode({
+        id: op.elementId,
+        type: op.type,
+        semanticRole: op.semanticRole,
+        layout: op.layout,
+        style: op.style,
+        content: op.content
+      });
+      return {
+        ...project,
+        scenes: project.scenes.map((s) =>
+          s.id !== op.sceneId ? s : { ...s, elements: [...s.elements, element] }
+        )
+      };
+    }
+
+    case "delete_element":
+      return {
+        ...project,
+        scenes: project.scenes.map((s) =>
+          s.id !== op.sceneId ? s : { ...s, elements: s.elements.filter((el) => el.id !== op.elementId) }
+        )
+      };
+
+    case "add_animation":
+      return updateSceneElement(project, op.sceneId, op.elementId, (el) => ({
+        ...el,
+        animations: [...el.animations, op.animation]
+      }));
+
+    case "update_animation":
+      return updateSceneElement(project, op.sceneId, op.elementId, (el) => ({
+        ...el,
+        animations: el.animations.map((a) =>
+          a.id !== op.animationId ? a : { ...a, ...op.patch }
+        )
+      }));
+
+    case "delete_animation":
+      return updateSceneElement(project, op.sceneId, op.elementId, (el) => ({
+        ...el,
+        animations: el.animations.filter((a) => a.id !== op.animationId)
+      }));
+
+    case "set_element_motion_preset":
+      return updateSceneElement(project, op.sceneId, op.elementId, (el) => ({
+        ...el,
+        motionPreset: op.motionPreset,
+        animations: op.animations
+      }));
+
+    case "add_scene": {
+      const scenes = [...project.scenes, op.scene];
+      return { ...project, scenes, timelineTracks: buildSequentialTimelineTracks(scenes) };
+    }
+
+    case "delete_scene": {
+      const scenes = project.scenes.filter((s) => s.id !== op.sceneId);
+      return { ...project, scenes, timelineTracks: buildSequentialTimelineTracks(scenes) };
+    }
+
+    case "reorder_scenes": {
+      const scenes = [...project.scenes];
+      const [moved] = scenes.splice(op.fromIndex, 1);
+      scenes.splice(op.toIndex, 0, moved);
+      return { ...project, scenes, timelineTracks: buildSequentialTimelineTracks(scenes) };
+    }
+
+    case "update_scene":
+      return {
+        ...project,
+        scenes: project.scenes.map((s) => (s.id !== op.sceneId ? s : { ...s, ...op.patch }))
+      };
+
+    case "update_scene_duration":
+      return updateSceneDuration(project, op.sceneId, Math.max(1000, op.durationMs));
+
+    case "set_brand_theme":
+      return { ...project, brandTheme: op.brandTheme };
+  }
 }
 
 export function createPrototypeProject(): ProjectDocument {

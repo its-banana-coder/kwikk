@@ -25,7 +25,7 @@ button {
 
 .app-shell {
   height: 100vh;
-  padding: 8px 16px;
+  padding: 8px 16px 8px 0;
   display: flex;
   flex-direction: column;
 }
@@ -36,6 +36,7 @@ button {
   gap: 16px;
   align-items: center;
   margin-bottom: 8px;
+  padding-left: 16px;
 }
 
 .topbar-meta {
@@ -70,26 +71,26 @@ h1 {
 .workspace {
   flex: 1;
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr) 280px;
+  grid-template-columns: 48px 180px minmax(0, 1fr) 280px;
   grid-template-rows: 1fr auto;
   grid-template-areas:
-    "left preview properties"
-    "scenes-bar scenes-bar scenes-bar";
+    "left options preview properties"
+    "scenes-bar scenes-bar scenes-bar scenes-bar";
   gap: 12px;
   min-height: 0;
+  position: relative;
 }
 
 .workspace.no-properties {
-  grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-columns: 48px 180px minmax(0, 1fr);
   grid-template-areas:
-    "left preview"
-    "scenes-bar scenes-bar";
+    "left options preview"
+    "scenes-bar scenes-bar scenes-bar";
 }
 
 .panel {
   background: #ffffff;
   border: 1px solid rgba(2, 6, 23, 0.06);
-  border-radius: 12px;
   box-shadow: 0 8px 24px rgba(2, 6, 23, 0.06);
   padding: 12px;
   display: flex;
@@ -100,6 +101,15 @@ h1 {
 
 .left-panel {
   grid-area: left;
+  padding: 8px 0;
+  border: none;
+  border-right: 1px solid rgba(2, 6, 23, 0.06);
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: visible;
+  background: #ffffff;
 }
 
 .preview-panel {
@@ -157,7 +167,6 @@ h1 {
 
 .scene-item,
 .element-item {
-  border-radius: 8px;
   border: 1px solid rgba(2, 6, 23, 0.06);
   background: #ffffff;
   color: inherit;
@@ -182,7 +191,6 @@ h1 {
   color: #94a3b8;
   font-size: 16px;
   padding: 2px 5px;
-  border-radius: 4px;
   line-height: 1;
   flex-shrink: 0;
   display: flex;
@@ -211,7 +219,6 @@ h1 {
 
 .playback-button {
   border: 1px solid rgba(245, 158, 11, 0.38);
-  border-radius: 8px;
   padding: 8px 12px;
   background: rgba(245, 158, 11, 0.06);
   color: #92400e;
@@ -221,6 +228,7 @@ h1 {
 .phone-frame {
   flex: 1;
   min-height: 0;
+  max-height: calc(100% - 80px);
   width: 100%;
   position: relative;
 }
@@ -233,16 +241,15 @@ h1 {
 
 .preview-canvas canvas {
   display: block;
-  border-radius: 4px;
   border: 1px solid rgba(0, 0, 0, 0.12);
 }
 
 .playback-bar {
   width: 100%;
-  margin-top: 12px;
-  margin-inline: auto;
+  margin-top: 8px;
+  flex-shrink: 0;
   display: grid;
-  gap: 8px;
+  gap: 4px;
 }
 
 .time-row {
@@ -270,7 +277,6 @@ input,
 textarea,
 select {
   width: 100%;
-  border-radius: 6px;
   border: 1px solid rgba(2, 6, 23, 0.06);
   background: #ffffff;
   color: #0f172a;
@@ -289,7 +295,6 @@ textarea {
 
 pre {
   margin: 0;
-  border-radius: 8px;
   background: #f8fafc;
   padding: 10px;
   font-size: 11px;
@@ -308,23 +313,25 @@ pre {
 .transport-controls {
   display: flex;
   gap: 8px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(2, 6, 23, 0.06);
-  margin-bottom: 12px;
+  margin-top: 10px;
+  flex-shrink: 0;
+  justify-content: center;
 }
 
 .transport-btn {
-  flex: 1;
+  width: 40px;
+  height: 36px;
   border: 1px solid rgba(2, 6, 23, 0.08);
   border-radius: 8px;
-  background: #f8fafc;
+  background: #ffffff;
   color: #475569;
-  font-size: 14px;
-  padding: 10px 0;
+  font-size: 13px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.1s, color 0.1s, border-color 0.1s;
+  flex-shrink: 0;
 }
 
 .transport-btn:hover {
@@ -339,47 +346,86 @@ pre {
   color: #92400e;
 }
 
-.accordion {
+.add-element-trigger {
   display: flex;
   flex-direction: column;
-  gap: 0;
-}
-
-.accordion-header {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  background: transparent;
-  border: 1px solid rgba(2, 6, 23, 0.06);
-  border-radius: 8px;
-  padding: 9px 12px;
-  font-size: 13px;
+  gap: 4px;
+  width: 36px;
+  padding: 10px 0;
+  border: 1px solid rgba(2, 6, 23, 0.08);
+  background: #f8fafc;
   color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
 }
 
-.accordion-header:hover {
+.add-element-trigger:hover,
+.add-element-trigger.active {
+  background: rgba(245, 158, 11, 0.08);
   border-color: rgba(245, 158, 11, 0.5);
   color: #92400e;
 }
 
-.accordion-chevron {
-  font-size: 16px;
+.add-element-icon {
+  font-size: 18px;
   line-height: 1;
-  color: #94a3b8;
+  font-weight: 300;
 }
 
-.accordion-body {
+.add-element-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+.options-panel {
+  grid-area: options;
+  background: #ffffff;
+  border: 1px solid rgba(2, 6, 23, 0.06);
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.06);
+  padding: 10px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-top: 6px;
+  overflow-y: auto;
+  color: #0f172a;
+  visibility: hidden;
+}
+
+.options-panel.open {
+  visibility: visible;
+}
+
+.overlay-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(2, 6, 23, 0.06);
+  margin-bottom: 2px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
+.overlay-close {
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 18px;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.overlay-close:hover {
+  background: #fee2e2;
+  color: #dc2626;
 }
 
 .add-el-btn {
   border: 1px solid rgba(2, 6, 23, 0.06);
-  border-radius: 7px;
   background: #ffffff;
   color: #334155;
   font-size: 13px;
@@ -401,7 +447,6 @@ pre {
   padding: 8px 10px;
   background: #ffffff;
   border: 1px solid rgba(2, 6, 23, 0.06);
-  border-radius: 12px;
   box-shadow: 0 4px 12px rgba(2, 6, 23, 0.05);
 }
 
@@ -424,7 +469,6 @@ pre {
   gap: 8px;
   flex-shrink: 0;
   border: 1px solid rgba(2, 6, 23, 0.07);
-  border-radius: 8px;
   background: #f8fafc;
   color: #334155;
   padding: 6px 10px;
@@ -468,7 +512,6 @@ pre {
 .timeline-toggle-btn {
   flex-shrink: 0;
   border: 1px solid rgba(2, 6, 23, 0.07);
-  border-radius: 8px;
   background: #f8fafc;
   color: #64748b;
   font-size: 12px;
@@ -512,7 +555,6 @@ pre {
   font-weight: 600;
   color: #0f172a;
   padding: 3px 6px;
-  border-radius: 5px;
   width: auto;
 }
 
@@ -549,7 +591,6 @@ pre {
   gap: 7px;
   background: #f8fafc;
   border: 1px solid rgba(2, 6, 23, 0.06);
-  border-radius: 6px;
   padding: 4px 8px;
 }
 
@@ -558,7 +599,6 @@ pre {
   height: 24px;
   padding: 0;
   border: none;
-  border-radius: 4px;
   background: transparent;
   cursor: pointer;
   flex-shrink: 0;
@@ -579,7 +619,6 @@ pre {
   gap: 4px;
   background: #f8fafc;
   border: 1px solid rgba(2, 6, 23, 0.06);
-  border-radius: 6px;
   padding: 4px 8px;
 }
 
@@ -603,6 +642,87 @@ pre {
   font-size: 12px;
   color: #94a3b8;
   flex-shrink: 0;
+}
+
+/* ─── Animation inspector ───────────────────────────────────────────────────── */
+
+.animations-block {
+  border-top: 1px solid rgba(2, 6, 23, 0.06);
+  padding-top: 14px;
+  margin-top: 14px;
+}
+
+.anim-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.anim-section-header h3 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #94a3b8;
+}
+
+.anim-add-btn {
+  border: 1px dashed rgba(2, 6, 23, 0.15);
+  background: transparent;
+  color: #64748b;
+  font-size: 11px;
+  padding: 2px 8px;
+  line-height: 1.6;
+}
+
+.anim-add-btn:hover {
+  border-color: rgba(245, 158, 11, 0.5);
+  color: #92400e;
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.anim-preset-row {
+  margin-bottom: 10px;
+}
+
+.anim-preset-label {
+  display: grid;
+  gap: 4px;
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.anim-item {
+  border: 1px solid rgba(2, 6, 23, 0.06);
+  background: #f8fafc;
+  margin-bottom: 8px;
+}
+
+.anim-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 8px;
+  border-bottom: 1px solid rgba(2, 6, 23, 0.05);
+  background: rgba(2, 6, 23, 0.02);
+}
+
+.anim-item-id {
+  font-size: 10px;
+  font-family: monospace;
+  color: #94a3b8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
+}
+
+.anim-item-fields {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
 }
 
 @media (max-width: 960px) {

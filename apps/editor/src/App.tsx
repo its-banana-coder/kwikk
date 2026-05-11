@@ -1,6 +1,8 @@
 import { resolveRenderFrame } from "@kwikk/render-core";
 import { validateProjectDocument } from "@kwikk/scene-graph";
+import { MOTION_PRESETS, buildPresetAnimations, type MotionPresetKey } from "@kwikk/animation-engine";
 import { TimelineEngine } from "@kwikk/timeline";
+import type { AnimationType } from "@kwikk/shared-types";
 import { useEffect, useRef, useState } from "react";
 import { PreviewCanvas } from "./PreviewCanvas";
 import { useEditorStore, useSelectedElement, useSelectedScene } from "./store";
@@ -15,7 +17,9 @@ function App() {
   const syncSelectedScene = useEditorStore((state) => state.syncSelectedScene);
   const selectElement = useEditorStore((state) => state.selectElement);
   const setCurrentTime = useEditorStore((state) => state.setCurrentTime);
+  const setPlayback = useEditorStore((state) => state.setPlayback);
   const togglePlayback = useEditorStore((state) => state.togglePlayback);
+  const dispatchOperation = useEditorStore((state) => state.dispatchOperation);
   const updateElement = useEditorStore((state) => state.updateElement);
   const addElement = useEditorStore((state) => state.addElement);
   const deleteElement = useEditorStore((state) => state.deleteElement);
@@ -32,11 +36,10 @@ function App() {
     new TimelineEngine({
       durationMs: timeline.durationMs,
       currentTimeMs: timeline.currentTimeMs,
-      loop: true
+      loop: false
     })
   );
   const playbackRef = useRef(playback.isPlaying);
-  const [isTimelineVisible, setIsTimelineVisible] = useState(false);
   const [isAddElementOpen, setIsAddElementOpen] = useState(false);
   const [dragSceneIndex, setDragSceneIndex] = useState<number | null>(null);
   const [dropSceneIndex, setDropSceneIndex] = useState<number | null>(null);
@@ -78,6 +81,9 @@ function App() {
       if (playbackRef.current) {
         const nextTimeMs = timelineRef.current.tick(deltaMs);
         setCurrentTime(nextTimeMs);
+        if (!timelineRef.current.isPlaying) {
+          setPlayback(false);
+        }
       }
 
       frameId = window.requestAnimationFrame(step);
@@ -88,7 +94,7 @@ function App() {
     return () => {
       window.cancelAnimationFrame(frameId);
     };
-  }, [setCurrentTime]);
+  }, [setCurrentTime, setPlayback]);
 
   return (
     <div className="app-shell">
@@ -105,6 +111,50 @@ function App() {
 
       <main className="workspace">
         <section className="panel left-panel">
+          <button
+            className={`add-element-trigger${isAddElementOpen ? " active" : ""}`}
+            onClick={() => setIsAddElementOpen(!isAddElementOpen)}
+            title="Add Element"
+          >
+            <span className="add-element-icon">+</span>
+            <span className="add-element-label">Add</span>
+          </button>
+        </section>
+
+        <div className={`options-panel${isAddElementOpen ? " open" : ""}`}>
+          <div className="overlay-header">
+            <span>Add Element</span>
+            <button className="overlay-close" onClick={() => setIsAddElementOpen(false)}>×</button>
+          </div>
+          <button className="add-el-btn" onClick={() => addElement(selectedSceneId ?? project.scenes[0]?.id, 'text')}>
+            Text
+          </button>
+          <button className="add-el-btn" onClick={() => addElement(selectedSceneId ?? project.scenes[0]?.id, 'shape')}>
+            Rectangle
+          </button>
+          <button className="add-el-btn" onClick={() => addElement(selectedSceneId ?? project.scenes[0]?.id, 'image')}>
+            Image
+          </button>
+        </div>
+
+        <section className="panel preview-panel">
+          <div className="phone-frame" style={{ marginTop: 0 }}>
+            <PreviewCanvas
+              project={project}
+              timeMs={timeline.currentTimeMs}
+              selectedElementId={selectedElement?.id}
+              onUpdateElement={(id, updates) => {
+                if (selectedScene) {
+                  updateElement(selectedScene.id, id, updates);
+                }
+              }}
+              onSelectElement={(id) => {
+                if (selectedScene) {
+                  selectElement(selectedScene.id, id || "");
+                }
+              }}
+            />
+          </div>
           <div className="transport-controls">
             <button
               className={`transport-btn${!playback.isPlaying ? " active" : ""}`}
@@ -128,48 +178,7 @@ function App() {
               ■
             </button>
           </div>
-
-          <div className="accordion">
-            <button className="accordion-header" onClick={() => setIsAddElementOpen(!isAddElementOpen)}>
-              <span>Add Element</span>
-              <span className="accordion-chevron">{isAddElementOpen ? "−" : "+"}</span>
-            </button>
-            {isAddElementOpen && (
-              <div className="accordion-body">
-                <button className="add-el-btn" onClick={() => addElement(selectedSceneId ?? project.scenes[0]?.id, 'text')}>
-                  Text
-                </button>
-                <button className="add-el-btn" onClick={() => addElement(selectedSceneId ?? project.scenes[0]?.id, 'shape')}>
-                  Rectangle
-                </button>
-                <button className="add-el-btn" onClick={() => addElement(selectedSceneId ?? project.scenes[0]?.id, 'image')}>
-                  Image
-                </button>
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section className="panel preview-panel">
-          <div className="phone-frame" style={{ marginTop: 0 }}>
-            <PreviewCanvas 
-              project={project} 
-              timeMs={timeline.currentTimeMs} 
-              selectedElementId={selectedElement?.id}
-              onUpdateElement={(id, updates) => {
-                if (selectedScene) {
-                  updateElement(selectedScene.id, id, updates);
-                }
-              }}
-              onSelectElement={(id) => {
-                if (selectedScene) {
-                  selectElement(selectedScene.id, id || "");
-                }
-              }}
-            />
-          </div>
-          {isTimelineVisible && (
-            <div className="playback-bar">
+          <div className="playback-bar">
               <input
                 type="range"
                 min={0}
@@ -183,7 +192,6 @@ function App() {
                 <span>Scene {frame.sceneId ?? "none"}</span>
               </div>
             </div>
-          )}
         </section>
 
         <section className="panel properties-panel" style={{ gridArea: 'properties' }}>
@@ -456,7 +464,159 @@ function App() {
             <p className="empty-state">Select a scene element to edit its semantic state.</p>
           )}
 
+          {selectedScene && selectedElement && (
+            <div className="section-block animations-block">
+              <div className="anim-section-header">
+                <h3>Animations</h3>
+                <button
+                  className="anim-add-btn"
+                  onClick={() => {
+                    const animId = `anim_${Math.random().toString(36).slice(2, 9)}`;
+                    dispatchOperation({
+                      operation: "add_animation",
+                      sceneId: selectedScene.id,
+                      elementId: selectedElement.id,
+                      animation: { id: animId, type: "fadeIn", startMs: 0, durationMs: 500, easing: "easeOut" }
+                    });
+                  }}
+                >
+                  + Add
+                </button>
+              </div>
 
+              <div className="anim-preset-row">
+                <label className="anim-preset-label">
+                  Motion Preset
+                  <select
+                    value={selectedElement.motionPreset ?? ""}
+                    onChange={(e) => {
+                      const key = e.target.value as MotionPresetKey | "";
+                      if (!key) return;
+                      const scene = selectedScene;
+                      const track = project.timelineTracks.find((t) => t.sceneId === scene.id);
+                      const animations = buildPresetAnimations(key, track?.durationMs);
+                      dispatchOperation({
+                        operation: "set_element_motion_preset",
+                        sceneId: scene.id,
+                        elementId: selectedElement.id,
+                        motionPreset: key,
+                        animations
+                      });
+                    }}
+                  >
+                    <option value="">— none —</option>
+                    {(Object.keys(MOTION_PRESETS) as MotionPresetKey[]).map((key) => (
+                      <option key={key} value={key}>{key.replace(/_/g, " ")}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              {selectedElement.animations.length === 0 && (
+                <p className="empty-state" style={{ fontSize: 11 }}>No animations. Add one above or apply a motion preset.</p>
+              )}
+
+              {selectedElement.animations.map((anim) => (
+                <div key={anim.id} className="anim-item">
+                  <div className="anim-item-header">
+                    <span className="anim-item-id">{anim.id}</span>
+                    <button
+                      className="delete-btn"
+                      onClick={() =>
+                        dispatchOperation({
+                          operation: "delete_animation",
+                          sceneId: selectedScene.id,
+                          elementId: selectedElement.id,
+                          animationId: anim.id
+                        })
+                      }
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="anim-item-fields">
+                    <label>
+                      Type
+                      <select
+                        value={anim.type}
+                        onChange={(e) =>
+                          dispatchOperation({
+                            operation: "update_animation",
+                            sceneId: selectedScene.id,
+                            elementId: selectedElement.id,
+                            animationId: anim.id,
+                            patch: { type: e.target.value as AnimationType }
+                          })
+                        }
+                      >
+                        {(["fadeIn","fadeOut","slideUp","slideDown","slideLeft","slideRight","zoomIn","zoomOut","subtitle_pop","kinetic_slide","blur_transition"] as AnimationType[]).map((t) => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <div className="two-up">
+                      <label>
+                        Start ms
+                        <input
+                          type="number"
+                          min={0}
+                          step={50}
+                          value={anim.startMs}
+                          onChange={(e) =>
+                            dispatchOperation({
+                              operation: "update_animation",
+                              sceneId: selectedScene.id,
+                              elementId: selectedElement.id,
+                              animationId: anim.id,
+                              patch: { startMs: Number(e.target.value) }
+                            })
+                          }
+                        />
+                      </label>
+                      <label>
+                        Duration ms
+                        <input
+                          type="number"
+                          min={50}
+                          step={50}
+                          value={anim.durationMs}
+                          onChange={(e) =>
+                            dispatchOperation({
+                              operation: "update_animation",
+                              sceneId: selectedScene.id,
+                              elementId: selectedElement.id,
+                              animationId: anim.id,
+                              patch: { durationMs: Number(e.target.value) }
+                            })
+                          }
+                        />
+                      </label>
+                    </div>
+                    <label>
+                      Easing
+                      <select
+                        value={anim.easing ?? "linear"}
+                        onChange={(e) =>
+                          dispatchOperation({
+                            operation: "update_animation",
+                            sceneId: selectedScene.id,
+                            elementId: selectedElement.id,
+                            animationId: anim.id,
+                            patch: { easing: e.target.value }
+                          })
+                        }
+                      >
+                        <option value="linear">linear</option>
+                        <option value="easeIn">easeIn</option>
+                        <option value="easeOut">easeOut</option>
+                        <option value="easeInOut">easeInOut</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {errors.length > 0 && (
             <div className="section-block errors">
@@ -502,9 +662,6 @@ function App() {
             ))}
             <button className="scene-chip add-chip" onClick={addScene}>+ Scene</button>
           </div>
-          <button className="timeline-toggle-btn" onClick={() => setIsTimelineVisible(!isTimelineVisible)}>
-            {isTimelineVisible ? "Hide Timeline" : "Timeline"}
-          </button>
         </div>
       </main>
     </div>
