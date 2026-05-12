@@ -1,5 +1,5 @@
 import { resolveElementNodeAtTime } from "@kwikk/animation-engine";
-import type { ElementNode, ProjectDocument, SceneBackground, Viewport } from "@kwikk/shared-types";
+import type { ElementNode, ProjectDocument, SceneBackground, TextSpan, Viewport } from "@kwikk/shared-types";
 import type {
   Application as PixiApplication,
   Container as PixiContainer,
@@ -57,6 +57,109 @@ function createRoundedRect(
 }
 
 
+interface LineWord {
+  node: PixiContainer;
+  width: number;
+  height: number;
+  isSpace: boolean;
+}
+
+function layoutTextSegments(
+  pixi: PixiModule,
+  spans: TextSpan[],
+  baseStyle: any,
+  maxWidth: number,
+  align: "left" | "center" | "right" | "justify"
+): PixiContainer {
+  const container = new pixi.Container();
+  let currentX = 0;
+  let maxLineHeight = 0;
+  const lines: LineWord[][] = [[]];
+
+  for (const span of spans) {
+    const style = {
+      fontFamily: span.style?.fontFamily ?? baseStyle.fontFamily,
+      fontSize: span.style?.fontSize ?? baseStyle.fontSize,
+      fontWeight: normalizeFontWeight(span.style?.fontWeight ?? baseStyle.fontWeight) ?? "600",
+      fontStyle: (span.style?.fontStyle ?? baseStyle.fontStyle) as any,
+      fill: span.style?.color ?? baseStyle.fill,
+    };
+
+    const tokens = span.text.match(/(\n|[^\S\n]+|\S+)/g) || [];
+
+    for (const token of tokens) {
+      if (token === "\n") {
+        currentX = 0;
+        maxLineHeight = 0;
+        lines.push([]);
+        continue;
+      }
+
+      const isSpace = /^[^\S\n]+$/.test(token);
+      const textNode = new pixi.Text({ text: token, style });
+      const width = textNode.width;
+      const height = textNode.height;
+
+      if (!isSpace && currentX + width > maxWidth && currentX > 0) {
+        currentX = 0;
+        maxLineHeight = 0;
+        lines.push([]);
+      }
+
+      textNode.x = currentX;
+
+      currentX += width;
+      maxLineHeight = Math.max(maxLineHeight, height);
+
+      lines[lines.length - 1].push({
+        node: textNode,
+        width,
+        height,
+        isSpace
+      });
+
+      container.addChild(textNode);
+    }
+  }
+
+  let currentLineY = 0;
+  for (const line of lines) {
+    if (line.length === 0) continue;
+
+    let lineWidth = 0;
+    let lastNonSpaceIdx = -1;
+    for (let i = line.length - 1; i >= 0; i--) {
+      if (!line[i].isSpace) {
+        lastNonSpaceIdx = i;
+        break;
+      }
+    }
+
+    if (lastNonSpaceIdx >= 0) {
+      const lastNode = line[lastNonSpaceIdx].node;
+      lineWidth = lastNode.x + line[lastNonSpaceIdx].width;
+    }
+
+    let offsetX = 0;
+    if (align === "center") {
+      offsetX = (maxWidth - lineWidth) / 2;
+    } else if (align === "right") {
+      offsetX = maxWidth - lineWidth;
+    }
+
+    const lineMaxH = Math.max(...line.map(w => w.height));
+
+    for (const word of line) {
+      word.node.x += offsetX;
+      word.node.y = currentLineY + (lineMaxH - word.height); // bottom baseline align
+    }
+
+    currentLineY += lineMaxH;
+  }
+
+  return container;
+}
+
 
 function createTextNode(pixi: PixiModule, element: ElementNode): PixiContainer {
   const container = new pixi.Container();
@@ -71,50 +174,21 @@ function createTextNode(pixi: PixiModule, element: ElementNode): PixiContainer {
   const align = element.style.textAlign ?? "left";
   const richText = element.content?.richText;
 
-  // Derive the effective style: element.style is the primary source (always kept up-to-date
-  // by the inspector). When richText spans exist we also check the first span for colour /
-  // weight / italic overrides so at least the dominant formatting shows in playback.
-  const firstSpanStyle = richText?.[0]?.style;
-  const effectiveStyle = {
-    fontFamily:    element.style.fontFamily    ?? "Inter",
-    fontSize:      element.style.fontSize      ?? 48,
-    fontWeight:    normalizeFontWeight(element.style.fontWeight) ?? "600",
-    fontStyle:     (element.style.fontStyle    ?? "normal") as any,
-    color:         element.style.color         ?? "#0f172a",
-    // First-span overrides for inline weight / italic / colour (font+size come from element.style)
-    ...(firstSpanStyle?.fontWeight !== undefined ? { fontWeight: normalizeFontWeight(firstSpanStyle.fontWeight) } : {}),
-    ...(firstSpanStyle?.fontStyle  !== undefined ? { fontStyle:  firstSpanStyle.fontStyle  as any }              : {}),
-    ...(firstSpanStyle?.color      !== undefined ? { color:      firstSpanStyle.color       }                    : {}),
+  const baseStyle = {
+    fontFamily: element.style.fontFamily ?? "Inter",
+    fontSize: element.style.fontSize ?? 48,
+    fontWeight: normalizeFontWeight(element.style.fontWeight) ?? "600",
+    fontStyle: (element.style.fontStyle ?? "normal") as any,
+    fill: element.style.color ?? "#0f172a",
   };
 
-  const plain = element.content?.text ?? element.semanticRole ?? element.id;
-  const textNode = new pixi.Text({
-    text: plain,
-    style: {
-      fill:          effectiveStyle.color,
-      fontFamily:    effectiveStyle.fontFamily,
-      fontSize:      effectiveStyle.fontSize,
-      fontWeight:    effectiveStyle.fontWeight,
-      fontStyle:     effectiveStyle.fontStyle,
-      align:         align as any,
-      wordWrap:      true,
-      wordWrapWidth: element.layout.width
-    }
-  });
+  const spans = richText && richText.length > 0 
+    ? richText 
+    : [{ text: element.content?.text ?? element.semanticRole ?? element.id }];
 
-  const t = textNode as any;
-  if (align === "center") {
-    if (t.anchor) t.anchor.x = 0.5;
-    t.x = element.layout.width / 2;
-  } else if (align === "right") {
-    if (t.anchor) t.anchor.x = 1;
-    t.x = element.layout.width;
-  } else {
-    if (t.anchor) t.anchor.x = 0;
-    t.x = 0;
-  }
-
+  const textNode = layoutTextSegments(pixi, spans, baseStyle, element.layout.width, align as any);
   container.addChild(textNode);
+
   return container;
 }
 
@@ -346,6 +420,19 @@ export class PixiSceneRenderer {
 
     container.replaceChildren(this.app.canvas);
     this.app.stage.addChild(this.root);
+
+    // Wait for all web fonts (Google Fonts etc.) to finish loading before
+    // the first frame so pixi.Text canvas rendering uses the correct typefaces.
+    await document.fonts.ready;
+
+    // For HTMLText to support custom fonts inside its isolated SVG foreignObject,
+    // we must load the Google Fonts CSS through Pixi's Assets system. Pixi will
+    // automatically parse the CSS, download the fonts, and embed them as base64.
+    await pixi.Assets.load({
+      alias: 'GoogleFonts',
+      src: 'https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap'
+    });
+
     this.mounted = true;
   }
 
@@ -374,6 +461,7 @@ export class PixiSceneRenderer {
     if (!this.app || !this.root || !this.pixi) {
       return;
     }
+
 
     this.root.removeChildren();
 

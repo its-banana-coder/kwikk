@@ -798,9 +798,9 @@ function ElementInspector({ selectedSceneId, selectedElement, project, onUpdateE
               label="Font"
               input={
                 <Select
-                  data={["DM Sans", "Space Grotesk", "IBM Plex Sans", "Manrope"]}
-                  value={selectedElement.style.fontFamily ?? "DM Sans"}
-                  onChange={(v) => applyTextStyle({ fontFamily: v ?? "DM Sans" })}
+                  data={["Inter", "DM Sans", "Space Grotesk", "IBM Plex Sans", "Manrope"]}
+                  value={selectedElement.style.fontFamily ?? "Inter"}
+                  onChange={(v) => applyTextStyle({ fontFamily: v ?? "Inter" })}
                 />
               }
             />
