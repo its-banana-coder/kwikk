@@ -3,6 +3,7 @@ import type { ElementNode, ProjectDocument, SceneBackground, TextSpan, Viewport 
 import type {
   Application as PixiApplication,
   Container as PixiContainer,
+  Filter as PixiFilter,
   Graphics as PixiGraphics,
   TextStyleFontWeight
 } from "pixi.js";
@@ -354,7 +355,7 @@ function createImageNode(ctx: RenderContext, element: ElementNode): PixiContaine
 
   // Apply filters
   if (element.style.filters) {
-    const filters: any[] = [];
+    const filters: PixiFilter[] = [];
     const f = element.style.filters;
 
     if (f.blur) filters.push(new ctx.pixi.BlurFilter({ strength: f.blur }));
@@ -454,7 +455,7 @@ function createImageNode(ctx: RenderContext, element: ElementNode): PixiContaine
 
   // Apply Blend Mode
   if (element.style.blendMode) {
-    (mainNode as any).blendMode = element.style.blendMode;
+    mainNode.blendMode = element.style.blendMode as any;
   }
 
   container.addChild(mainNode);

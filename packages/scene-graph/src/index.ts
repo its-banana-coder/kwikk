@@ -1,5 +1,6 @@
 import type {
   Animation,
+  CropProps,
   ElementContent,
   ElementNode,
   ElementType,
@@ -248,17 +249,20 @@ export type EditorOperation =
   | { operation: "update_scene"; sceneId: string; patch: { name?: string; backgroundColor?: string; background?: Partial<SceneBackground> } }
   | { operation: "update_scene_duration"; sceneId: string; durationMs: number }
   | { operation: "set_brand_theme"; brandTheme: string | undefined }
-  | { operation: "crop_image"; sceneId: string; elementId: string; crop: { x: number; y: number; width: number; height: number } }
-  | { operation: "set_image_frame"; sceneId: string; elementId: string; frame: string | undefined }
+  | { operation: "crop_image"; sceneId: string; elementId: string; crop: CropProps | undefined }
+  | { operation: "set_image_frame"; sceneId: string; elementId: string; frame: "phone" | "laptop" | "polaroid" | "cinematic" | undefined }
   | { operation: "toggle_element_lock"; sceneId: string; elementId: string; locked: boolean }
   | { operation: "toggle_element_visibility"; sceneId: string; elementId: string; visible: boolean };
 
 export function applyOperation(project: ProjectDocument, op: EditorOperation): ProjectDocument {
   switch (op.operation) {
     case "patch_element":
-      return updateSceneElement(project, op.sceneId, op.elementId, (el) =>
-        mergeElementPatch(el, op.patch)
-      );
+      return updateSceneElement(project, op.sceneId, op.elementId, (el) => {
+        const patch = el.layout.locked && op.patch.layout
+          ? { ...op.patch, layout: undefined }
+          : op.patch;
+        return mergeElementPatch(el, patch);
+      });
 
     case "add_element": {
       const element = createElementNode({

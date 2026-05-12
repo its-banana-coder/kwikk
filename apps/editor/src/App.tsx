@@ -53,7 +53,7 @@ import {
   IconFilter,
   IconFrame
 } from "@tabler/icons-react";
-import type { AnimationType, ElementNode, Scene, SceneBackground, ImageFitMode } from "@kwikk/shared-types";
+import type { AnimationType, ElementNode, ImageFilters, Scene, SceneBackground, ImageFitMode } from "@kwikk/shared-types";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { PreviewCanvas } from "./PreviewCanvas";
 import type { EditorOperation, ElementPatch } from "./store";
@@ -1235,7 +1235,7 @@ interface ImageInspectorProps {
 function ImageInspector({ selectedSceneId, selectedElement, onUpdateElement, onDispatchOperation }: ImageInspectorProps) {
   const filters = selectedElement.style.filters ?? {};
 
-  const updateFilter = (patch: Partial<import("@kwikk/shared-types").ImageFilters>) => {
+  const updateFilter = (patch: Partial<ImageFilters>) => {
     onUpdateElement(selectedSceneId, selectedElement.id, {
       style: {
         filters: { ...filters, ...patch }
@@ -1337,7 +1337,7 @@ function ImageInspector({ selectedSceneId, selectedElement, onUpdateElement, onD
                 crop: { x: 0, y: 0, width: selectedElement.layout.width, height: selectedElement.layout.height }
               });
             } else {
-              onDispatchOperation({ operation: "crop_image", sceneId: selectedSceneId, elementId: selectedElement.id, crop: undefined as any });
+              onDispatchOperation({ operation: "crop_image", sceneId: selectedSceneId, elementId: selectedElement.id, crop: undefined });
             }
           }}
         />

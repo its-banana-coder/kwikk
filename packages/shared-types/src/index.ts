@@ -66,7 +66,7 @@ export interface StyleProps {
   borderRadius?: number;
   fillPattern?: "solid" | "gradient" | "stripes" | "dots" | "grid";
   fillColor2?: string;
-  blendMode?: string;
+  blendMode?: "normal" | "multiply" | "screen" | "overlay" | "darken" | "lighten";
   filters?: ImageFilters;
 }
 
@@ -89,7 +89,7 @@ export interface ElementContent {
   shape?: ShapeKind;
   label?: string;
   crop?: CropProps;
-  frame?: string;
+  frame?: "phone" | "laptop" | "polaroid" | "cinematic";
 }
 
 export interface ManualOverrides {
