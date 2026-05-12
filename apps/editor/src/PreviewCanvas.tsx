@@ -1,22 +1,87 @@
 import { PixiSceneRenderer, resolveRenderFrame } from "@kwikk/render-core";
-import type { ElementContent, ProjectDocument, LayoutProps } from "@kwikk/shared-types";
-import { useEffect, useRef, useState } from "react";
+import { spansFromPlainText } from "@kwikk/scene-graph";
+import type { ElementContent, ProjectDocument, LayoutProps, TextSpan } from "@kwikk/shared-types";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 interface PreviewCanvasProps {
   project: ProjectDocument;
   timeMs: number;
   showAllElements?: boolean;
+  isPlaying?: boolean;
   selectedElementId?: string | null;
   onUpdateElement?: (id: string, updates: { content?: Partial<ElementContent>, layout?: Partial<LayoutProps>, style?: any }) => void;
   onSelectElement?: (id: string | null) => void;
+  onPatchTextSpans?: (elementId: string, spans: TextSpan[]) => void;
+  onTextSelectionChange?: (range: { start: number; end: number } | null) => void;
 }
 
-export function PreviewCanvas({ project, timeMs, showAllElements, selectedElementId, onUpdateElement, onSelectElement }: PreviewCanvasProps) {
+function charOffsetOf(root: HTMLElement, targetNode: Node, nodeOffset: number): number {
+  let count = 0;
+  function walk(node: Node): boolean {
+    if (node === targetNode) { count += nodeOffset; return true; }
+    if (node.nodeType === Node.TEXT_NODE) { count += node.textContent?.length ?? 0; return false; }
+    for (let i = 0; i < node.childNodes.length; i++) { if (walk(node.childNodes[i])) return true; }
+    return false;
+  }
+  walk(root);
+  return count;
+}
+
+function getSelectionCharRange(el: HTMLElement): { start: number; end: number } | null {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
+  const range = sel.getRangeAt(0);
+  if (!el.contains(range.commonAncestorContainer)) return null;
+  const start = charOffsetOf(el, range.startContainer, range.startOffset);
+  const end = charOffsetOf(el, range.endContainer, range.endOffset);
+  return start < end ? { start, end } : null;
+}
+
+function spansToEditableHtml(spans: TextSpan[]): string {
+  return spans
+    .map((span) => {
+      const css: string[] = [];
+      if (span.style?.fontWeight !== undefined) css.push(`font-weight:${span.style.fontWeight}`);
+      if (span.style?.fontStyle) css.push(`font-style:${span.style.fontStyle}`);
+      if (span.style?.color) css.push(`color:${span.style.color}`);
+      if (span.style?.fontSize !== undefined) css.push(`font-size:${span.style.fontSize}px`);
+      if (span.style?.fontFamily) css.push(`font-family:${span.style.fontFamily}`);
+      const text = span.text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      return css.length > 0 ? `<span style="${css.join(";")};">${text}</span>` : `<span>${text}</span>`;
+    })
+    .join("");
+}
+
+function domToSpans(el: HTMLElement): TextSpan[] {
+  const spans: TextSpan[] = [];
+  for (const child of el.childNodes) {
+    const text = child.textContent ?? "";
+    if (!text) continue;
+    if (child.nodeType === Node.TEXT_NODE) {
+      spans.push({ text });
+    } else if (child.nodeType === Node.ELEMENT_NODE) {
+      const spanEl = child as HTMLElement;
+      const s = spanEl.style;
+      const style: TextSpan["style"] = {};
+      if (s.fontWeight) style.fontWeight = s.fontWeight;
+      if (s.fontStyle && s.fontStyle !== "normal") style.fontStyle = s.fontStyle;
+      if (s.color) style.color = s.color;
+      if (s.fontSize) style.fontSize = parseInt(s.fontSize, 10);
+      if (s.fontFamily) style.fontFamily = s.fontFamily;
+      spans.push(Object.keys(style).length > 0 ? { text, style } : { text });
+    }
+  }
+  return spans.length > 0 ? spans : [{ text: el.textContent ?? "" }];
+}
+
+export function PreviewCanvas({ project, timeMs, showAllElements, isPlaying, selectedElementId, onUpdateElement, onSelectElement, onPatchTextSpans, onTextSelectionChange }: PreviewCanvasProps) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const rendererRef = useRef<PixiSceneRenderer | null>(null);
   const latestProjectRef = useRef(project);
   const latestTimeRef = useRef(timeMs);
   const latestShowAllRef = useRef(showAllElements);
+  const editableRef = useRef<HTMLDivElement | null>(null);
+  const editableIsFocusedRef = useRef(false);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartPos, setDragStartPos] = useState<{ x: number; y: number } | null>(null);
@@ -26,9 +91,11 @@ export function PreviewCanvas({ project, timeMs, showAllElements, selectedElemen
   const [resizeStartPos, setResizeStartPos] = useState<{ x: number; y: number } | null>(null);
   const [resizeStartBounds, setResizeStartBounds] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
 
+  const latestSelectedElementIdRef = useRef(selectedElementId);
   latestProjectRef.current = project;
   latestTimeRef.current = timeMs;
   latestShowAllRef.current = showAllElements;
+  latestSelectedElementIdRef.current = selectedElementId;
 
   useEffect(() => {
     const mountNode = mountRef.current;
@@ -45,8 +112,11 @@ export function PreviewCanvas({ project, timeMs, showAllElements, selectedElemen
     rendererRef.current = renderer;
 
     const drawLatestFrame = () => {
-      renderer.setProject(latestProjectRef.current);
-      renderer.renderFrame({ timeMs: latestTimeRef.current, showAllElements: latestShowAllRef.current });
+      const proj = latestProjectRef.current;
+      const selId = latestSelectedElementIdRef.current;
+      const isText = selId ? proj.scenes.some((s) => s.elements.some((e) => e.id === selId && e.type === "text")) : false;
+      renderer.setProject(proj);
+      renderer.renderFrame({ timeMs: latestTimeRef.current, showAllElements: latestShowAllRef.current, excludeElementId: isText ? selId ?? undefined : undefined });
     };
 
     void renderer.mount(mountNode).then(() => {
@@ -99,15 +169,45 @@ export function PreviewCanvas({ project, timeMs, showAllElements, selectedElemen
       return;
     }
 
+    const isText = !isPlaying && selectedElementId ? project.scenes.some((s) => s.elements.some((e) => e.id === selectedElementId && e.type === "text")) : false;
     renderer.setProject(project);
-    renderer.renderFrame({ timeMs, showAllElements });
-  }, [project, timeMs, showAllElements]);
+    renderer.renderFrame({ timeMs, showAllElements, excludeElementId: isText ? selectedElementId ?? undefined : undefined });
+  }, [project, timeMs, showAllElements, isPlaying, selectedElementId]);
 
   const frame = resolveRenderFrame(project, { timeMs, showAllElements });
   const selectedElement = frame.elements.find((e) => e.id === selectedElementId);
-  const isEditingText = selectedElement && selectedElement.type === "text";
+  const isEditingText = !isPlaying && selectedElement && selectedElement.type === "text";
+
+  const handleSelectionChange = useCallback(() => {
+    const el = editableRef.current;
+    if (!el) return;
+    const range = getSelectionCharRange(el);
+    onTextSelectionChange?.(range);
+  }, [onTextSelectionChange]);
+
+  useEffect(() => {
+    document.addEventListener("selectionchange", handleSelectionChange);
+    return () => document.removeEventListener("selectionchange", handleSelectionChange);
+  }, [handleSelectionChange]);
+
+  // Reset innerHTML when switching to a different text element
+  useEffect(() => {
+    const el = editableRef.current;
+    if (!el || !isEditingText || !selectedElement) return;
+    const spans: TextSpan[] = selectedElement.content?.richText ?? spansFromPlainText(selectedElement.content?.text ?? "");
+    el.innerHTML = spansToEditableHtml(spans);
+  }, [selectedElementId]);
+
+  // Sync innerHTML from external edits (e.g. inspector) when overlay is not focused
+  useEffect(() => {
+    const el = editableRef.current;
+    if (!el || !isEditingText || !selectedElement || editableIsFocusedRef.current) return;
+    const spans: TextSpan[] = selectedElement.content?.richText ?? spansFromPlainText(selectedElement.content?.text ?? "");
+    el.innerHTML = spansToEditableHtml(spans);
+  });
 
   let textOverlay = null;
+
   if (isEditingText && dimensions.width > 0 && dimensions.height > 0) {
     const rendererWidth = dimensions.width;
     const rendererHeight = dimensions.height;
@@ -124,45 +224,51 @@ export function PreviewCanvas({ project, timeMs, showAllElements, selectedElemen
     const elY = offsetY + selectedElement.layout.y * scale;
     const elWidth = selectedElement.layout.width * scale;
     const elHeight = selectedElement.layout.height * scale;
-    
     const fontSize = (selectedElement.style.fontSize ?? 48) * scale;
     const fontFamily = selectedElement.style.fontFamily ?? "Inter";
-    const fontWeight = selectedElement.style.fontWeight ?? "600";
+    const fontWeight = String(selectedElement.style.fontWeight ?? "600");
     const fontStyle = selectedElement.style.fontStyle ?? "normal";
+    const color = selectedElement.style.color ?? "#0f172a";
     const textAlign = (selectedElement.style.textAlign ?? "left") as "left" | "center" | "right" | "justify";
 
     textOverlay = (
-      <textarea
+      <div
+        ref={editableRef}
+        contentEditable
+        suppressContentEditableWarning
+        spellCheck={false}
+        onFocus={() => { editableIsFocusedRef.current = true; }}
+        onBlur={() => { editableIsFocusedRef.current = false; }}
+        onInput={(e) => {
+          if (!onPatchTextSpans) return;
+          const newSpans = domToSpans(e.currentTarget);
+          onPatchTextSpans(selectedElement.id, newSpans);
+        }}
         style={{
           position: "absolute",
           left: elX,
           top: elY,
           width: elWidth,
-          height: elHeight,
-          background: "transparent",
+          minHeight: elHeight,
+          background: selectedElement.style.backgroundColor || "transparent",
+          borderRadius: selectedElement.style.backgroundColor && selectedElement.style.backgroundColor !== "transparent" ? 24 : 0,
           border: "1px dashed #3b82f6",
-          color: "transparent",
-          caretColor: "#3b82f6",
-          zIndex: 10,
-          resize: "none",
           outline: "none",
           padding: 0,
           margin: 0,
-          overflow: "hidden",
-              fontSize: `${fontSize}px`,
-              fontFamily: fontFamily,
-              fontWeight: fontWeight,
-              fontStyle: fontStyle,
-              textAlign: textAlign,
-          lineHeight: "normal"
-        }}
-        value={selectedElement.content?.text ?? ""}
-        onChange={(e) => {
-          if (onUpdateElement) {
-            onUpdateElement(selectedElement.id, {
-              content: { ...selectedElement.content, text: e.target.value }
-            });
-          }
+          overflow: "visible",
+          opacity: 1,
+          fontSize: `${fontSize}px`,
+          fontFamily,
+          fontWeight,
+          fontStyle,
+          color,
+          textAlign,
+          lineHeight: "normal",
+          zIndex: 10,
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+          cursor: "text"
         }}
       />
     );

@@ -23,6 +23,12 @@ interface PlaybackState {
   isPlaying: boolean;
 }
 
+export interface TextSelectionRange {
+  elementId: string;
+  start: number;
+  end: number;
+}
+
 interface EditorState {
   project: ProjectDocument;
   selectedSceneId: string;
@@ -31,6 +37,7 @@ interface EditorState {
   playback: PlaybackState;
   showAllElements: boolean;
   operationLog: EditorOperation[];
+  textSelectionRange: TextSelectionRange | null;
 
   dispatchOperation: (op: EditorOperation) => void;
 
@@ -41,6 +48,7 @@ interface EditorState {
   setPlayback: (isPlaying: boolean) => void;
   togglePlayback: () => void;
   toggleShowAllElements: () => void;
+  setTextSelectionRange: (range: TextSelectionRange | null) => void;
 
   updateElement: (sceneId: string, elementId: string, patch: ElementPatch) => void;
   addElement: (sceneId: string, type: ElementNode["type"]) => void;
@@ -73,6 +81,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   playback: { isPlaying: false },
   showAllElements: false,
   operationLog: [],
+  textSelectionRange: null,
 
   dispatchOperation: (op) =>
     set((state) => {
@@ -158,7 +167,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }),
 
   selectElement: (sceneId, elementId) =>
-    set({ selectedSceneId: sceneId, selectedElementIds: [elementId] }),
+    set({ selectedSceneId: sceneId, selectedElementIds: [elementId], textSelectionRange: null }),
+
+  setTextSelectionRange: (range) => set({ textSelectionRange: range }),
 
   setCurrentTime: (timeMs) =>
     set((state) => ({

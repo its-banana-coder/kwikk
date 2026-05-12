@@ -8,6 +8,7 @@ import type {
   ProjectDocument,
   Scene,
   StyleProps,
+  TextSpan,
   TimelineTrack,
   Viewport
 } from "@kwikk/shared-types";
@@ -227,6 +228,7 @@ export type EditorOperation =
   | { operation: "update_animation"; sceneId: string; elementId: string; animationId: string; patch: Partial<Omit<Animation, "id">> }
   | { operation: "delete_animation"; sceneId: string; elementId: string; animationId: string }
   | { operation: "set_element_motion_preset"; sceneId: string; elementId: string; motionPreset: string | undefined; animations: Animation[] }
+  | { operation: "patch_text_spans"; sceneId: string; elementId: string; spans: TextSpan[] }
   | { operation: "add_scene"; scene: Scene }
   | { operation: "delete_scene"; sceneId: string }
   | { operation: "reorder_scenes"; fromIndex: number; toIndex: number }
@@ -293,6 +295,16 @@ export function applyOperation(project: ProjectDocument, op: EditorOperation): P
         animations: op.animations
       }));
 
+    case "patch_text_spans":
+      return updateSceneElement(project, op.sceneId, op.elementId, (el) => ({
+        ...el,
+        content: {
+          ...el.content,
+          richText: op.spans,
+          text: op.spans.map((s) => s.text).join("")
+        }
+      }));
+
     case "add_scene": {
       const scenes = [...project.scenes, op.scene];
       return { ...project, scenes, timelineTracks: buildSequentialTimelineTracks(scenes) };
@@ -322,6 +334,61 @@ export function applyOperation(project: ProjectDocument, op: EditorOperation): P
     case "set_brand_theme":
       return { ...project, brandTheme: op.brandTheme };
   }
+}
+
+// ─── Rich text span utilities ─────────────────────────────────────────────────
+
+export function spansFromPlainText(text: string): TextSpan[] {
+  return [{ text }];
+}
+
+function spanStyleKey(style: TextSpan["style"]): string {
+  if (!style) return "";
+  return [
+    style.fontWeight ?? "",
+    style.fontStyle ?? "",
+    style.color ?? "",
+    style.fontSize ?? "",
+    style.fontFamily ?? ""
+  ].join("|");
+}
+
+export function applySpanFormat(
+  spans: TextSpan[],
+  start: number,
+  end: number,
+  styleOverride: TextSpan["style"]
+): TextSpan[] {
+  // Flatten to characters
+  const chars: Array<{ char: string; style: TextSpan["style"] }> = [];
+  for (const span of spans) {
+    for (const char of span.text) {
+      chars.push({ char, style: span.style });
+    }
+  }
+
+  // Apply override to the selected range
+  for (let i = start; i < end && i < chars.length; i++) {
+    chars[i] = { char: chars[i].char, style: { ...chars[i].style, ...styleOverride } };
+  }
+
+  // Re-group adjacent characters with identical styles into spans
+  const result: TextSpan[] = [];
+  let i = 0;
+  while (i < chars.length) {
+    const { style } = chars[i];
+    const key = spanStyleKey(style);
+    let text = chars[i].char;
+    let j = i + 1;
+    while (j < chars.length && spanStyleKey(chars[j].style) === key) {
+      text += chars[j].char;
+      j++;
+    }
+    result.push(style && Object.keys(style).length > 0 ? { text, style } : { text });
+    i = j;
+  }
+
+  return result;
 }
 
 export function createPrototypeProject(): ProjectDocument {

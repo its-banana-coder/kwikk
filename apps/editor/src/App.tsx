@@ -1,5 +1,5 @@
 import { resolveRenderFrame } from "@kwikk/render-core";
-import { validateProjectDocument } from "@kwikk/scene-graph";
+import { validateProjectDocument, applySpanFormat, spansFromPlainText } from "@kwikk/scene-graph";
 import { MOTION_PRESETS, buildPresetAnimations, type MotionPresetKey } from "@kwikk/animation-engine";
 import { TimelineEngine } from "@kwikk/timeline";
 import { InspectorField, tokens, useEditorLayoutStore } from "@kwikk/ui-kit";
@@ -162,6 +162,8 @@ export default function App() {
   const showAllElements = useEditorStore((s) => s.showAllElements);
   const toggleShowAllElements = useEditorStore((s) => s.toggleShowAllElements);
   const dispatchOperation = useEditorStore((s) => s.dispatchOperation);
+  const textSelectionRange = useEditorStore((s) => s.textSelectionRange);
+  const setTextSelectionRange = useEditorStore((s) => s.setTextSelectionRange);
   const updateElement = useEditorStore((s) => s.updateElement);
   const deleteElement = useEditorStore((s) => s.deleteElement);
   const addScene = useEditorStore((s) => s.addScene);
@@ -239,8 +241,27 @@ export default function App() {
   }
 
   function addImageToCanvas(src: string) {
-    const elementId = nextElId();
-    dispatchOperation({ operation: "add_element", sceneId: selectedSceneId, elementId, type: "image", content: { src, label: "Image" } });
+    const img = new Image();
+    img.onload = () => {
+      let width = img.width;
+      let height = img.height;
+      const MAX_SIZE = 400;
+      if (width > MAX_SIZE || height > MAX_SIZE) {
+        const ratio = Math.min(MAX_SIZE / width, MAX_SIZE / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const elementId = nextElId();
+      dispatchOperation({
+        operation: "add_element",
+        sceneId: selectedSceneId,
+        elementId,
+        type: "image",
+        content: { src, label: "Image" },
+        layout: { width, height }
+      });
+    };
+    img.src = src;
   }
 
   function addShape(variant: "rectangle" | "square") {
@@ -471,12 +492,25 @@ export default function App() {
               project={project}
               timeMs={timeline.currentTimeMs}
               showAllElements={showAllElements}
+              isPlaying={playback.isPlaying}
               selectedElementId={selectedElement?.id}
               onUpdateElement={(id, updates) => {
                 if (selectedScene) updateElement(selectedScene.id, id, updates);
               }}
               onSelectElement={(id) => {
                 if (selectedScene) selectElement(selectedScene.id, id || "");
+              }}
+              onPatchTextSpans={(elementId, spans) => {
+                if (selectedScene) {
+                  dispatchOperation({ operation: "patch_text_spans", sceneId: selectedScene.id, elementId, spans });
+                }
+              }}
+              onTextSelectionChange={(range) => {
+                if (selectedElement && range) {
+                  setTextSelectionRange({ elementId: selectedElement.id, start: range.start, end: range.end });
+                } else {
+                  setTextSelectionRange(null);
+                }
               }}
             />
           </Box>
@@ -517,6 +551,7 @@ export default function App() {
                   onUpdateElement={updateElement}
                   onDispatchOperation={dispatchOperation}
                   onDelete={() => deleteElement(selectedScene.id, selectedElement.id)}
+                  textSelectionRange={textSelectionRange?.elementId === selectedElement.id ? textSelectionRange : null}
                 />
               ) : (
                 <Box style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", paddingTop: 48 }}>
@@ -640,10 +675,37 @@ interface ElementInspectorProps {
   onUpdateElement: (sceneId: string, elementId: string, patch: ElementPatch) => void;
   onDispatchOperation: (op: EditorOperation) => void;
   onDelete: () => void;
+  textSelectionRange: { elementId: string; start: number; end: number } | null;
 }
 
-function ElementInspector({ selectedSceneId, selectedElement, project, onUpdateElement, onDispatchOperation, onDelete }: ElementInspectorProps) {
+function ElementInspector({ selectedSceneId, selectedElement, project, onUpdateElement, onDispatchOperation, onDelete, textSelectionRange }: ElementInspectorProps) {
   const [showDimensions, setShowDimensions] = useState(false);
+
+  // Preserve the last non-null selection so inspector clicks (which fire selectionchange
+  // before onChange, clearing the range) still apply formatting to the intended chars.
+  const lastSelectionRef = useRef(textSelectionRange);
+  useEffect(() => {
+    if (textSelectionRange !== null) lastSelectionRef.current = textSelectionRange;
+  }, [textSelectionRange]);
+  useEffect(() => { lastSelectionRef.current = null; }, [selectedElement.id]);
+
+  const hasSelection = !!textSelectionRange;
+
+  function applySpanStyle(styleOverride: Parameters<typeof applySpanFormat>[3]) {
+    const range = textSelectionRange ?? lastSelectionRef.current;
+    if (!range) return;
+    const currentSpans = selectedElement.content?.richText ?? spansFromPlainText(selectedElement.content?.text ?? "");
+    const newSpans = applySpanFormat(currentSpans, range.start, range.end, styleOverride);
+    onDispatchOperation({ operation: "patch_text_spans", sceneId: selectedSceneId, elementId: selectedElement.id, spans: newSpans });
+  }
+
+  function applyTextStyle(styleOverride: Parameters<typeof applySpanFormat>[3] & Partial<import("@kwikk/shared-types").StyleProps>) {
+    if (hasSelection || lastSelectionRef.current) {
+      applySpanStyle(styleOverride);
+    } else {
+      onUpdateElement(selectedSceneId, selectedElement.id, { style: styleOverride });
+    }
+  }
 
   return (
     <Stack gap="md" pt={4}>
@@ -661,6 +723,11 @@ function ElementInspector({ selectedSceneId, selectedElement, project, onUpdateE
 
       {selectedElement.type === "text" && (
         <>
+          {hasSelection && (
+            <Text fz="xs" c="orange.6" fw={600} ta="center" style={{ background: "rgba(255,140,50,0.07)", borderRadius: 6, padding: "4px 8px" }}>
+              Formatting applies to selected text
+            </Text>
+          )}
           <InspectorField
             label="Text"
             input={
@@ -668,7 +735,11 @@ function ElementInspector({ selectedSceneId, selectedElement, project, onUpdateE
                 autosize
                 minRows={2}
                 value={selectedElement.content?.text ?? ""}
-                onChange={(e) => onUpdateElement(selectedSceneId, selectedElement.id, { content: { ...selectedElement.content, text: e.currentTarget.value } })}
+                onChange={(e) => {
+                  const text = e.currentTarget.value;
+                  // Clear richText so the plain text value is what Pixi renders during playback
+                  onUpdateElement(selectedSceneId, selectedElement.id, { content: { ...selectedElement.content, text, richText: undefined } });
+                }}
               />
             }
           />
@@ -679,7 +750,7 @@ function ElementInspector({ selectedSceneId, selectedElement, project, onUpdateE
                 <Select
                   data={["DM Sans", "Space Grotesk", "IBM Plex Sans", "Manrope"]}
                   value={selectedElement.style.fontFamily ?? "DM Sans"}
-                  onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { style: { fontFamily: v ?? "DM Sans" } })}
+                  onChange={(v) => applyTextStyle({ fontFamily: v ?? "DM Sans" })}
                 />
               }
             />
@@ -689,7 +760,7 @@ function ElementInspector({ selectedSceneId, selectedElement, project, onUpdateE
                 <NumberInput
                   min={8}
                   value={selectedElement.style.fontSize ?? 48}
-                  onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { style: { fontSize: toNumber(v, selectedElement.style.fontSize ?? 48) } })}
+                  onChange={(v) => applyTextStyle({ fontSize: toNumber(v, selectedElement.style.fontSize ?? 48) })}
                 />
               }
             />
@@ -700,7 +771,7 @@ function ElementInspector({ selectedSceneId, selectedElement, project, onUpdateE
               input={
                 <SwatchPicker
                   value={selectedElement.style.color ?? "#f8fafc"}
-                  onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { style: { color: v } })}
+                  onChange={(v) => applyTextStyle({ color: v })}
                 />
               }
             />
@@ -734,13 +805,13 @@ function ElementInspector({ selectedSceneId, selectedElement, project, onUpdateE
               label="Bold"
               size="xs"
               checked={Number(selectedElement.style.fontWeight ?? 600) >= 700}
-              onChange={(e) => onUpdateElement(selectedSceneId, selectedElement.id, { style: { fontWeight: e.currentTarget.checked ? 700 : 400 } })}
+              onChange={(e) => applyTextStyle({ fontWeight: e.currentTarget.checked ? 700 : 400 })}
             />
             <Switch
               label="Italic"
               size="xs"
               checked={(selectedElement.style.fontStyle ?? "normal") === "italic"}
-              onChange={(e) => onUpdateElement(selectedSceneId, selectedElement.id, { style: { fontStyle: e.currentTarget.checked ? "italic" : "normal" } })}
+              onChange={(e) => applyTextStyle({ fontStyle: e.currentTarget.checked ? "italic" : "normal" })}
             />
           </Group>
         </>

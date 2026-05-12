@@ -1,5 +1,5 @@
 import { resolveElementNodeAtTime } from "@kwikk/animation-engine";
-import type { ElementNode, ProjectDocument, Viewport } from "@kwikk/shared-types";
+import type { ElementNode, ProjectDocument, StyleProps, TextSpan, Viewport } from "@kwikk/shared-types";
 import type {
   Application as PixiApplication,
   Container as PixiContainer,
@@ -11,6 +11,7 @@ import { getActiveSceneWindow } from "@kwikk/timeline";
 export interface RenderFrameInput {
   timeMs: number;
   showAllElements?: boolean;
+  excludeElementId?: string;
 }
 
 export interface ResolvedRenderFrame {
@@ -26,6 +27,11 @@ export interface PixiSceneRendererOptions {
 }
 
 type PixiModule = typeof import("pixi.js");
+
+export interface RenderContext {
+  pixi: PixiModule;
+  requestRedraw: () => void;
+}
 
 function normalizeFontWeight(value: string | number | undefined): TextStyleFontWeight | undefined {
   if (typeof value === "number") {
@@ -49,6 +55,30 @@ function createRoundedRect(
   return new pixi.Graphics().roundRect(0, 0, width, height, 24).fill({ color, alpha });
 }
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function spansToHtml(spans: TextSpan[], base: StyleProps): string {
+  return spans
+    .map((span) => {
+      const css: string[] = [];
+      const fw = span.style?.fontWeight ?? base.fontWeight;
+      const fi = span.style?.fontStyle;
+      const col = span.style?.color;
+      const fs = span.style?.fontSize;
+      const ff = span.style?.fontFamily;
+      if (fw !== undefined) css.push(`font-weight:${fw}`);
+      if (fi) css.push(`font-style:${fi}`);
+      if (col) css.push(`color:${col}`);
+      if (fs !== undefined) css.push(`font-size:${fs}px`);
+      if (ff) css.push(`font-family:${ff}`);
+      const content = escapeHtml(span.text);
+      return css.length > 0 ? `<span style="${css.join(";")};">${content}</span>` : content;
+    })
+    .join("");
+}
+
 function createTextNode(pixi: PixiModule, element: ElementNode): PixiContainer {
   const container = new pixi.Container();
   const backgroundColor = element.style.backgroundColor;
@@ -60,33 +90,47 @@ function createTextNode(pixi: PixiModule, element: ElementNode): PixiContainer {
   }
 
   const align = element.style.textAlign ?? "left";
+  const richText = element.content?.richText;
+  const baseStyle = {
+    fontFamily: element.style.fontFamily ?? "Inter",
+    fontSize: element.style.fontSize ?? 48,
+    fontWeight: normalizeFontWeight(element.style.fontWeight) ?? "600",
+    fontStyle: (element.style.fontStyle ?? "normal") as any,
+    align: align as any,
+    wordWrap: true,
+    wordWrapWidth: element.layout.width
+  };
 
-  const text = new pixi.Text({
-    text: element.content?.text ?? element.semanticRole ?? element.id,
-    style: {
-      fill: element.style.color ?? "#0f172a",
-      fontFamily: element.style.fontFamily ?? "Inter",
-      fontSize: element.style.fontSize ?? 48,
-      fontWeight: normalizeFontWeight(element.style.fontWeight) ?? "600",
-      fontStyle: (element.style.fontStyle ?? "normal") as any,
-      align: align as any,
-      wordWrap: true,
-      wordWrapWidth: element.layout.width
-    }
-  });
+  let textNode: PixiContainer;
 
-  if (align === "center") {
-    text.anchor.x = 0.5;
-    text.x = element.layout.width / 2;
-  } else if (align === "right") {
-    text.anchor.x = 1;
-    text.x = element.layout.width;
+  if (richText && richText.length > 0 && "HTMLText" in pixi) {
+    const HTMLTextClass = (pixi as any).HTMLText as new (opts: object) => PixiContainer & { anchor?: { x: number }; x: number };
+    const html = spansToHtml(richText, element.style);
+    textNode = new HTMLTextClass({
+      text: html,
+      style: { fill: element.style.color ?? "#0f172a", ...baseStyle }
+    });
   } else {
-    text.anchor.x = 0;
-    text.x = 0;
+    const plain = element.content?.text ?? element.semanticRole ?? element.id;
+    textNode = new pixi.Text({
+      text: plain,
+      style: { fill: element.style.color ?? "#0f172a", ...baseStyle }
+    });
   }
 
-  container.addChild(text);
+  const t = textNode as any;
+  if (align === "center") {
+    if (t.anchor) t.anchor.x = 0.5;
+    t.x = element.layout.width / 2;
+  } else if (align === "right") {
+    if (t.anchor) t.anchor.x = 1;
+    t.x = element.layout.width;
+  } else {
+    if (t.anchor) t.anchor.x = 0;
+    t.x = 0;
+  }
+
+  container.addChild(textNode);
   return container;
 }
 
@@ -189,19 +233,56 @@ function createShapeNode(pixi: PixiModule, element: ElementNode): PixiContainer 
   return container;
 }
 
-function createElementDisplay(pixi: PixiModule, element: ElementNode): PixiContainer {
+function createImageNode(ctx: RenderContext, element: ElementNode): PixiContainer {
+  const container = new ctx.pixi.Container();
+  const { width, height } = element.layout;
+  const src = element.content?.src;
+
+  if (src && !src.startsWith("placeholder://")) {
+    const texture = ctx.pixi.Assets.cache.get(src);
+    if (!texture) {
+      ctx.pixi.Assets.load(src).then(() => {
+        ctx.requestRedraw();
+      }).catch((e) => console.error("Asset load error", e));
+    } else {
+      try {
+        const sprite = new ctx.pixi.Sprite(texture);
+        sprite.width = width;
+        sprite.height = height;
+
+        const radius = element.style.borderRadius ?? 0;
+        if (radius > 0) {
+          const mask = new ctx.pixi.Graphics().roundRect(0, 0, width, height, radius).fill({ color: 0xffffff });
+          sprite.mask = mask as any;
+          container.addChild(mask);
+        }
+        container.addChild(sprite);
+        return container;
+      } catch (e) {
+        // fallback
+      }
+    }
+  }
+
+  container.addChild(createPlaceholderNode(
+    ctx.pixi,
+    element,
+    element.style.backgroundColor ?? "#1d4ed8",
+    element.content?.label ?? (src && !src.startsWith("placeholder://") ? "Loading..." : "Image placeholder")
+  ));
+  
+  return container;
+}
+
+function createElementDisplay(ctx: RenderContext, element: ElementNode): PixiContainer {
+  const pixi = ctx.pixi;
   switch (element.type) {
     case "text":
       return createTextNode(pixi, element);
     case "shape":
       return createShapeNode(pixi, element);
     case "image":
-      return createPlaceholderNode(
-        pixi,
-        element,
-        element.style.backgroundColor ?? "#1d4ed8",
-        element.content?.label ?? "Image placeholder"
-      );
+      return createImageNode(ctx, element);
     case "video":
       return createPlaceholderNode(
         pixi,
@@ -243,6 +324,7 @@ export function resolveRenderFrame(
     backgroundColor: active.scene.backgroundColor ?? "#ffffff",
     elements: active.scene.elements
       .map((element) => resolveElementNodeAtTime(element, active.localTimeMs, input.showAllElements))
+      .filter((element) => element.id !== input.excludeElementId)
       .sort((left, right) => left.layout.zIndex - right.layout.zIndex)
   };
 }
@@ -253,6 +335,7 @@ export class PixiSceneRenderer {
   private pixi: PixiModule | null = null;
   private project: ProjectDocument;
   private mounted = false;
+  private lastFrame: ResolvedRenderFrame | null = null;
 
   constructor(project: ProjectDocument, private readonly options?: PixiSceneRendererOptions) {
     this.project = project;
@@ -287,6 +370,7 @@ export class PixiSceneRenderer {
 
   renderFrame(input: RenderFrameInput): ResolvedRenderFrame {
     const frame = resolveRenderFrame(this.project, input);
+    this.lastFrame = frame;
     if (this.app && this.root && this.pixi) {
       this.drawFrame(frame);
     }
@@ -331,8 +415,17 @@ export class PixiSceneRenderer {
         .fill({ color: frame.backgroundColor })
     );
 
+    const ctx: RenderContext = {
+      pixi: this.pixi,
+      requestRedraw: () => {
+        if (this.lastFrame) {
+          this.drawFrame(this.lastFrame);
+        }
+      }
+    };
+
     for (const element of frame.elements) {
-      const display = createElementDisplay(this.pixi, element);
+      const display = createElementDisplay(ctx, element);
       applyElementTransform(display, element);
       frameContainer.addChild(display);
     }

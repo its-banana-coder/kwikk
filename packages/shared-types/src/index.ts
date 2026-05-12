@@ -41,8 +41,14 @@ export interface StyleProps {
   fillColor2?: string;
 }
 
+export interface TextSpan {
+  text: string;
+  style?: Pick<StyleProps, "fontWeight" | "fontStyle" | "color" | "fontSize" | "fontFamily">;
+}
+
 export interface ElementContent {
   text?: string;
+  richText?: TextSpan[];
   src?: string;
   shape?: ShapeKind;
   label?: string;
