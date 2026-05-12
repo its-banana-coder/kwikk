@@ -64,8 +64,8 @@ export function resolveAnimatedLayout(element: ElementNode, timeMs: number, show
 
   const baseX = layout.x;
   const baseY = layout.y;
-  const baseOpacity = layout.opacity;
-  const baseScale = layout.scale;
+  const baseOpacity = layout.opacity ?? 1;
+  const baseScale = layout.scale ?? 1;
 
   let xOffset = 0;
   let yOffset = 0;

@@ -213,7 +213,13 @@ export function mergeElementPatch(element: ElementNode, patch: ElementPatch): El
     ...element,
     ...patch,
     layout: patch.layout ? { ...element.layout, ...patch.layout } : element.layout,
-    style: patch.style ? { ...element.style, ...patch.style } : element.style,
+    style: patch.style
+      ? {
+          ...element.style,
+          ...patch.style,
+          filters: patch.style.filters ? { ...element.style.filters, ...patch.style.filters } : element.style.filters
+        }
+      : element.style,
     content: patch.content ? { ...element.content, ...patch.content } : element.content,
     overrides: patch.overrides ? { ...element.overrides, ...patch.overrides } : element.overrides
   };
@@ -235,7 +241,11 @@ export type EditorOperation =
   | { operation: "reorder_scenes"; fromIndex: number; toIndex: number }
   | { operation: "update_scene"; sceneId: string; patch: { name?: string; backgroundColor?: string; background?: Partial<SceneBackground> } }
   | { operation: "update_scene_duration"; sceneId: string; durationMs: number }
-  | { operation: "set_brand_theme"; brandTheme: string | undefined };
+  | { operation: "set_brand_theme"; brandTheme: string | undefined }
+  | { operation: "crop_image"; sceneId: string; elementId: string; crop: { x: number; y: number; width: number; height: number } }
+  | { operation: "set_image_frame"; sceneId: string; elementId: string; frame: string | undefined }
+  | { operation: "toggle_element_lock"; sceneId: string; elementId: string; locked: boolean }
+  | { operation: "toggle_element_visibility"; sceneId: string; elementId: string; visible: boolean };
 
 export function applyOperation(project: ProjectDocument, op: EditorOperation): ProjectDocument {
   switch (op.operation) {
@@ -342,6 +352,30 @@ export function applyOperation(project: ProjectDocument, op: EditorOperation): P
 
     case "set_brand_theme":
       return { ...project, brandTheme: op.brandTheme };
+
+    case "crop_image":
+      return updateSceneElement(project, op.sceneId, op.elementId, (el) => ({
+        ...el,
+        content: { ...el.content, crop: op.crop }
+      }));
+
+    case "set_image_frame":
+      return updateSceneElement(project, op.sceneId, op.elementId, (el) => ({
+        ...el,
+        content: { ...el.content, frame: op.frame }
+      }));
+
+    case "toggle_element_lock":
+      return updateSceneElement(project, op.sceneId, op.elementId, (el) => ({
+        ...el,
+        layout: { ...el.layout, locked: op.locked }
+      }));
+
+    case "toggle_element_visibility":
+      return updateSceneElement(project, op.sceneId, op.elementId, (el) => ({
+        ...el,
+        layout: { ...el.layout, visible: op.visible }
+      }));
   }
 }
 

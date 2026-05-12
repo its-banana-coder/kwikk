@@ -24,6 +24,33 @@ export interface LayoutProps {
   scale: number;
   opacity: number;
   zIndex: number;
+  flipX?: boolean;
+  flipY?: boolean;
+  visible?: boolean;
+  locked?: boolean;
+}
+
+export interface ImageFilters {
+  brightness?: number;
+  contrast?: number;
+  saturation?: number;
+  blur?: number;
+  sharpen?: number;
+  vignette?: number;
+  monochrome?: boolean;
+  duotone?: {
+    color1: string;
+    color2: string;
+  };
+  glow?: {
+    color: string;
+    blur: number;
+    strength: number;
+  };
+  hdr?: boolean;
+  vintage?: boolean;
+  cinematic?: boolean;
+  y2k?: boolean;
 }
 
 export interface StyleProps {
@@ -39,11 +66,20 @@ export interface StyleProps {
   borderRadius?: number;
   fillPattern?: "solid" | "gradient" | "stripes" | "dots" | "grid";
   fillColor2?: string;
+  blendMode?: string;
+  filters?: ImageFilters;
 }
 
 export interface TextSpan {
   text: string;
   style?: Pick<StyleProps, "fontWeight" | "fontStyle" | "color" | "fontSize" | "fontFamily">;
+}
+
+export interface CropProps {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 export interface ElementContent {
@@ -52,6 +88,8 @@ export interface ElementContent {
   src?: string;
   shape?: ShapeKind;
   label?: string;
+  crop?: CropProps;
+  frame?: string;
 }
 
 export interface ManualOverrides {

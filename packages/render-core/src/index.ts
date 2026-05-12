@@ -296,15 +296,34 @@ function createImageNode(ctx: RenderContext, element: ElementNode): PixiContaine
   const { width, height } = element.layout;
   const src = element.content?.src;
 
+  let mainNode: PixiContainer;
+
   if (src && !src.startsWith("placeholder://")) {
     const texture = ctx.pixi.Assets.cache.get(src);
     if (!texture) {
       ctx.pixi.Assets.load(src).then(() => {
         ctx.requestRedraw();
       }).catch((e) => console.error("Asset load error", e));
+      mainNode = createPlaceholderNode(
+        ctx.pixi,
+        element,
+        element.style.backgroundColor ?? "#1d4ed8",
+        "Loading..."
+      );
     } else {
       try {
         const sprite = new ctx.pixi.Sprite(texture);
+
+        // Handle Crop
+        if (element.content?.crop) {
+          const { x, y, width: cw, height: ch } = element.content.crop;
+          const cropTexture = new ctx.pixi.Texture({
+            source: texture.source,
+            frame: new ctx.pixi.Rectangle(x, y, cw, ch),
+          });
+          sprite.texture = cropTexture;
+        }
+
         sprite.width = width;
         sprite.height = height;
 
@@ -314,21 +333,82 @@ function createImageNode(ctx: RenderContext, element: ElementNode): PixiContaine
           sprite.mask = mask as any;
           container.addChild(mask);
         }
-        container.addChild(sprite);
-        return container;
+        mainNode = sprite;
       } catch (e) {
-        // fallback
+        mainNode = createPlaceholderNode(
+          ctx.pixi,
+          element,
+          element.style.backgroundColor ?? "#1d4ed8",
+          "Error loading image"
+        );
       }
+    }
+  } else {
+    mainNode = createPlaceholderNode(
+      ctx.pixi,
+      element,
+      element.style.backgroundColor ?? "#1d4ed8",
+      element.content?.label ?? "Image placeholder"
+    );
+  }
+
+  // Apply filters
+  if (element.style.filters) {
+    const filters: any[] = [];
+    const f = element.style.filters;
+
+    if (f.blur) filters.push(new ctx.pixi.BlurFilter({ strength: f.blur }));
+
+    if (f.brightness !== undefined || f.contrast !== undefined || f.saturation !== undefined || f.monochrome) {
+      const cm = new ctx.pixi.ColorMatrixFilter();
+      if (f.brightness !== undefined) cm.brightness(f.brightness, false);
+      if (f.contrast !== undefined) cm.contrast(f.contrast, false);
+      if (f.saturation !== undefined) cm.saturate(f.saturation, false);
+      if (f.monochrome) cm.blackAndWhite(false);
+      filters.push(cm);
+    }
+
+    // HDR simulation
+    if (f.hdr) {
+      const hdr = new ctx.pixi.ColorMatrixFilter();
+      hdr.contrast(0.2, true);
+      hdr.saturate(0.2, true);
+      filters.push(hdr);
+    }
+
+    if (filters.length > 0) {
+      mainNode.filters = filters;
     }
   }
 
-  container.addChild(createPlaceholderNode(
-    ctx.pixi,
-    element,
-    element.style.backgroundColor ?? "#1d4ed8",
-    element.content?.label ?? (src && !src.startsWith("placeholder://") ? "Loading..." : "Image placeholder")
-  ));
-  
+  // Apply Blend Mode
+  if (element.style.blendMode) {
+    (mainNode as any).blendMode = element.style.blendMode;
+  }
+
+  container.addChild(mainNode);
+
+  // Apply Frame (simplified as an overlay graphics for now)
+  if (element.content?.frame) {
+    const frameOverlay = new ctx.pixi.Graphics();
+    if (element.content.frame === "phone") {
+      frameOverlay.roundRect(0, 0, width, height, 40).stroke({ width: 10, color: 0x333333 });
+      container.addChild(frameOverlay);
+    } else if (element.content.frame === "laptop") {
+      frameOverlay.rect(0, 0, width, height).stroke({ width: 10, color: 0x333333 });
+      frameOverlay.moveTo(-20, height).lineTo(width + 20, height).stroke({ width: 15, color: 0x333333 });
+      container.addChild(frameOverlay);
+    } else if (element.content.frame === "polaroid") {
+      const p = new ctx.pixi.Graphics();
+      p.rect(-10, -10, width + 20, height + 60).fill({ color: 0xffffff });
+      container.addChildAt(p, 0);
+    } else if (element.content.frame === "cinematic") {
+      const topBar = new ctx.pixi.Graphics().rect(0, 0, width, 40).fill({ color: 0x000000 });
+      const bottomBar = new ctx.pixi.Graphics().rect(0, height - 40, width, 40).fill({ color: 0x000000 });
+      container.addChild(topBar, bottomBar);
+    }
+  }
+
   return container;
 }
 
@@ -356,8 +436,24 @@ function applyElementTransform(node: PixiContainer, element: ElementNode): void 
   node.y = element.layout.y;
   node.alpha = element.layout.opacity;
   node.rotation = (element.layout.rotation * Math.PI) / 180;
-  node.scale.set(element.layout.scale);
+
+  const scaleX = element.layout.scale * (element.layout.flipX ? -1 : 1);
+  const scaleY = element.layout.scale * (element.layout.flipY ? -1 : 1);
+  node.scale.set(scaleX, scaleY);
+
+  if (element.layout.flipX) {
+    node.pivot.x = element.layout.width;
+  } else {
+    node.pivot.x = 0;
+  }
+  if (element.layout.flipY) {
+    node.pivot.y = element.layout.height;
+  } else {
+    node.pivot.y = 0;
+  }
+
   node.zIndex = element.layout.zIndex;
+  node.visible = element.layout.visible !== false;
 }
 
 export function resolveRenderFrame(

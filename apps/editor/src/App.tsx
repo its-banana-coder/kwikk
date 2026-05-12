@@ -44,7 +44,14 @@ import {
   IconAlignLeft,
   IconAlignCenter,
   IconAlignRight,
-  IconAlignJustified
+  IconAlignJustified,
+  IconFlipHorizontal,
+  IconFlipVertical,
+  IconLock,
+  IconLockOpen,
+  IconCrop,
+  IconFilter,
+  IconFrame
 } from "@tabler/icons-react";
 import type { AnimationType, ElementNode, Scene, SceneBackground, ImageFitMode } from "@kwikk/shared-types";
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -867,6 +874,15 @@ function ElementInspector({ selectedSceneId, selectedElement, project, onUpdateE
         </>
       )}
 
+      {selectedElement.type === "image" && (
+        <ImageInspector
+          selectedSceneId={selectedSceneId}
+          selectedElement={selectedElement}
+          onUpdateElement={onUpdateElement}
+          onDispatchOperation={onDispatchOperation}
+        />
+      )}
+
       {selectedElement.type === "shape" && (
         <>
           <Divider color="rgba(0,0,0,0.08)" />
@@ -956,24 +972,66 @@ function ElementInspector({ selectedSceneId, selectedElement, project, onUpdateE
       <Stack gap="xs">
         <Group justify="space-between">
           <Text c="gray.5" fz="xs" fw={700} tt="uppercase" lts="0.06em">Layout</Text>
-          {selectedElement.type !== "shape" && (
-            <Button variant="subtle" color="gray" size="compact-xs" onClick={() => setShowDimensions((v) => !v)}>
-              {showDimensions ? "Hide" : "Dimensions"}
-            </Button>
-          )}
+          <Group gap={4}>
+            <ActionIcon
+              variant="subtle"
+              color={selectedElement.layout.locked ? "red" : "gray"}
+              size="xs"
+              onClick={() => onDispatchOperation({ operation: "toggle_element_lock", sceneId: selectedSceneId, elementId: selectedElement.id, locked: !selectedElement.layout.locked })}
+            >
+              {selectedElement.layout.locked ? <IconLock size={12} /> : <IconLockOpen size={12} />}
+            </ActionIcon>
+            <ActionIcon
+              variant="subtle"
+              color={selectedElement.layout.visible === false ? "red" : "gray"}
+              size="xs"
+              onClick={() => onDispatchOperation({ operation: "toggle_element_visibility", sceneId: selectedSceneId, elementId: selectedElement.id, visible: selectedElement.layout.visible === false })}
+            >
+              {selectedElement.layout.visible === false ? <IconEyeOff size={12} /> : <IconEye size={12} />}
+            </ActionIcon>
+            {selectedElement.type !== "shape" && (
+              <Button variant="subtle" color="gray" size="compact-xs" onClick={() => setShowDimensions((v) => !v)}>
+                {showDimensions ? "Hide" : "Dimensions"}
+              </Button>
+            )}
+          </Group>
         </Group>
         {(showDimensions || selectedElement.type === "shape") && (
           <SimpleGrid cols={2} spacing="xs">
-            <InspectorField label="X" input={<NumberInput value={selectedElement.layout.x} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { x: toNumber(v, selectedElement.layout.x) } })} />} />
-            <InspectorField label="Y" input={<NumberInput value={selectedElement.layout.y} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { y: toNumber(v, selectedElement.layout.y) } })} />} />
-            <InspectorField label="W" input={<NumberInput min={1} value={selectedElement.layout.width} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { width: toNumber(v, selectedElement.layout.width) } })} />} />
-            <InspectorField label="H" input={<NumberInput min={1} value={selectedElement.layout.height} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { height: toNumber(v, selectedElement.layout.height) } })} />} />
+            <InspectorField label="X" input={<NumberInput disabled={selectedElement.layout.locked} value={selectedElement.layout.x} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { x: toNumber(v, selectedElement.layout.x) } })} />} />
+            <InspectorField label="Y" input={<NumberInput disabled={selectedElement.layout.locked} value={selectedElement.layout.y} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { y: toNumber(v, selectedElement.layout.y) } })} />} />
+            <InspectorField label="W" input={<NumberInput disabled={selectedElement.layout.locked} min={1} value={selectedElement.layout.width} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { width: toNumber(v, selectedElement.layout.width) } })} />} />
+            <InspectorField label="H" input={<NumberInput disabled={selectedElement.layout.locked} min={1} value={selectedElement.layout.height} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { height: toNumber(v, selectedElement.layout.height) } })} />} />
           </SimpleGrid>
         )}
         <SimpleGrid cols={2} spacing="xs">
-          <InspectorField label="Scale" input={<NumberInput min={0.1} step={0.05} value={selectedElement.layout.scale} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { scale: toNumber(v, selectedElement.layout.scale) } })} />} />
-          <InspectorField label="Opacity" input={<NumberInput min={0} max={1} step={0.05} value={selectedElement.layout.opacity} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { opacity: toNumber(v, selectedElement.layout.opacity) } })} />} />
+          <InspectorField label="Scale" input={<NumberInput disabled={selectedElement.layout.locked} min={0.1} step={0.05} value={selectedElement.layout.scale} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { scale: toNumber(v, selectedElement.layout.scale) } })} />} />
+          <InspectorField label="Opacity" input={<NumberInput disabled={selectedElement.layout.locked} min={0} max={1} step={0.05} value={selectedElement.layout.opacity} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { opacity: toNumber(v, selectedElement.layout.opacity) } })} />} />
         </SimpleGrid>
+        <SimpleGrid cols={2} spacing="xs">
+          <InspectorField label="Rotation" input={<NumberInput disabled={selectedElement.layout.locked} value={selectedElement.layout.rotation} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { rotation: toNumber(v, selectedElement.layout.rotation) } })} />} />
+          <InspectorField label="Z-Index" input={<NumberInput disabled={selectedElement.layout.locked} value={selectedElement.layout.zIndex} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { zIndex: toNumber(v, selectedElement.layout.zIndex) } })} />} />
+        </SimpleGrid>
+        <Group grow>
+          <Button
+            variant={selectedElement.layout.flipX ? "filled" : "light"}
+            size="xs"
+            color="gray"
+            leftSection={<IconFlipHorizontal size={14} />}
+            onClick={() => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { flipX: !selectedElement.layout.flipX } })}
+          >
+            Flip X
+          </Button>
+          <Button
+            variant={selectedElement.layout.flipY ? "filled" : "light"}
+            size="xs"
+            color="gray"
+            leftSection={<IconFlipVertical size={14} />}
+            onClick={() => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { flipY: !selectedElement.layout.flipY } })}
+          >
+            Flip Y
+          </Button>
+        </Group>
       </Stack>
 
       <Divider color="rgba(0,0,0,0.08)" />
@@ -1161,6 +1219,116 @@ function BgImagePositioner({ imageSrc, imageScale, offsetX, offsetY, viewportWid
           }
         />
       </SimpleGrid>
+    </Stack>
+  );
+}
+
+// ── Image inspector ───────────────────────────────────────────────────────────
+
+interface ImageInspectorProps {
+  selectedSceneId: string;
+  selectedElement: ElementNode;
+  onUpdateElement: (sceneId: string, elementId: string, patch: ElementPatch) => void;
+  onDispatchOperation: (op: EditorOperation) => void;
+}
+
+function ImageInspector({ selectedSceneId, selectedElement, onUpdateElement, onDispatchOperation }: ImageInspectorProps) {
+  const filters = selectedElement.style.filters ?? {};
+
+  const updateFilter = (patch: Partial<import("@kwikk/shared-types").ImageFilters>) => {
+    onUpdateElement(selectedSceneId, selectedElement.id, {
+      style: {
+        filters: { ...filters, ...patch }
+      }
+    });
+  };
+
+  return (
+    <Stack gap="md">
+      <Divider color="rgba(0,0,0,0.08)" />
+
+      {/* ── Frame ── */}
+      <Stack gap="xs">
+        <Group gap={6}>
+          <IconFrame size={14} color="gray" />
+          <Text c="gray.5" fz="xs" fw={700} tt="uppercase" lts="0.06em">Frame</Text>
+        </Group>
+        <Select
+          size="xs"
+          placeholder="No frame"
+          data={[
+            { value: "", label: "None" },
+            { value: "phone", label: "Phone" },
+            { value: "laptop", label: "Laptop" },
+            { value: "polaroid", label: "Polaroid" },
+            { value: "cinematic", label: "Cinematic" }
+          ]}
+          value={selectedElement.content?.frame ?? ""}
+          onChange={(v) => onDispatchOperation({ operation: "set_image_frame", sceneId: selectedSceneId, elementId: selectedElement.id, frame: v || undefined })}
+        />
+      </Stack>
+
+      <Divider color="rgba(0,0,0,0.08)" />
+
+      {/* ── Effects & Filters ── */}
+      <Stack gap="xs">
+        <Group gap={6}>
+          <IconFilter size={14} color="gray" />
+          <Text c="gray.5" fz="xs" fw={700} tt="uppercase" lts="0.06em">Effects & Filters</Text>
+        </Group>
+
+        <InspectorField label="Blur" input={<Slider min={0} max={20} step={1} value={filters.blur ?? 0} onChange={(v) => updateFilter({ blur: v })} size="xs" color="orange" />} />
+        <InspectorField label="Brightness" input={<Slider min={0} max={2} step={0.1} value={filters.brightness ?? 1} onChange={(v) => updateFilter({ brightness: v })} size="xs" color="orange" />} />
+        <InspectorField label="Contrast" input={<Slider min={0} max={2} step={0.1} value={filters.contrast ?? 1} onChange={(v) => updateFilter({ contrast: v })} size="xs" color="orange" />} />
+        <InspectorField label="Saturation" input={<Slider min={0} max={2} step={0.1} value={filters.saturation ?? 1} onChange={(v) => updateFilter({ saturation: v })} size="xs" color="orange" />} />
+
+        <SimpleGrid cols={2} spacing="xs">
+          <Switch label="Mono" size="xs" checked={!!filters.monochrome} onChange={(e) => updateFilter({ monochrome: e.currentTarget.checked })} />
+          <Switch label="HDR" size="xs" checked={!!filters.hdr} onChange={(e) => updateFilter({ hdr: e.currentTarget.checked })} />
+        </SimpleGrid>
+
+        <InspectorField
+          label="Blend"
+          input={
+            <Select
+              size="xs"
+              data={["normal", "multiply", "screen", "overlay", "darken", "lighten"]}
+              value={selectedElement.style.blendMode ?? "normal"}
+              onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { style: { blendMode: v ?? "normal" } })}
+            />
+          }
+        />
+      </Stack>
+
+      <Divider color="rgba(0,0,0,0.08)" />
+
+      {/* ── Crop (Simplified) ── */}
+      <Stack gap="xs">
+        <Group gap={6}>
+          <IconCrop size={14} color="gray" />
+          <Text c="gray.5" fz="xs" fw={700} tt="uppercase" lts="0.06em">Crop</Text>
+        </Group>
+        <Button
+          size="xs"
+          variant="light"
+          color="gray"
+          onClick={() => {
+            // Just a toggle/reset example for now
+            if (selectedElement.content?.crop) {
+              onDispatchOperation({ operation: "crop_image", sceneId: selectedSceneId, elementId: selectedElement.id, crop: undefined as any });
+            } else {
+              onDispatchOperation({
+                operation: "crop_image",
+                sceneId: selectedSceneId,
+                elementId: selectedElement.id,
+                crop: { x: 0, y: 0, width: 200, height: 200 }
+              });
+            }
+          }}
+        >
+          {selectedElement.content?.crop ? "Reset Crop" : "Apply 200x200 Crop"}
+        </Button>
+      </Stack>
     </Stack>
   );
 }
