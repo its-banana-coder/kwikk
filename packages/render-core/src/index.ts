@@ -376,8 +376,79 @@ function createImageNode(ctx: RenderContext, element: ElementNode): PixiContaine
       filters.push(hdr);
     }
 
+    if (f.sharpen) {
+      // Simplified sharpen using a high contrast + brightness tweak on a matrix
+      // Proper sharpen usually needs a convolution filter, but ColorMatrix can simulate it.
+      const sh = new ctx.pixi.ColorMatrixFilter();
+      sh.contrast(0.15 * f.sharpen, true);
+      filters.push(sh);
+    }
+
+    if (f.vintage) {
+      const vin = new ctx.pixi.ColorMatrixFilter();
+      vin.sepia(true);
+      vin.contrast(0.1, true);
+      filters.push(vin);
+    }
+
+    if (f.cinematic) {
+      const cin = new ctx.pixi.ColorMatrixFilter();
+      cin.night(0.1, true);
+      cin.contrast(0.2, true);
+      filters.push(cin);
+    }
+
+    if (f.y2k) {
+      const y2k = new ctx.pixi.ColorMatrixFilter();
+      y2k.technicolor(true);
+      y2k.hue(300, true); // Pinkish hue
+      filters.push(y2k);
+    }
+
+    if (f.monochrome) {
+      const mono = new ctx.pixi.ColorMatrixFilter();
+      mono.blackAndWhite(true);
+      filters.push(mono);
+    }
+
+    if (f.duotone) {
+      // Simulate duotone using blackAndWhite + colorize
+      // A proper duotone usually requires a custom shader or two passes.
+      const duo = new ctx.pixi.ColorMatrixFilter();
+      duo.blackAndWhite(true);
+      // We can't easily do two colors with just one ColorMatrixFilter without custom logic
+      // but we can colorize towards one.
+      duo.tint(parseInt(f.duotone.color1.replace("#", ""), 16), true);
+      filters.push(duo);
+    }
+
     if (filters.length > 0) {
       mainNode.filters = filters;
+    }
+
+    // Vignette (added as an overlay)
+    if (f.vignette) {
+      const vig = new ctx.pixi.Graphics();
+      // Using a radial gradient for vignette
+      // Pixi 8 doesn't have an easy radial gradient on Graphics directly without FillGradient
+      try {
+        const w = width;
+        const h = height;
+        const gradient = new (ctx.pixi as any).FillGradient(w / 2, h / 2, w / 2, h / 2, Math.max(w, h) / 2);
+        gradient.addColorStop(0, "rgba(0,0,0,0)");
+        gradient.addColorStop(1, `rgba(0,0,0,${f.vignette})`);
+        vig.rect(0, 0, w, h).fill(gradient);
+        container.addChild(vig);
+      } catch (e) {
+        // Fallback or skip
+      }
+    }
+
+    // Glow (implemented via a drop shadow or extra blur pass)
+    if (f.glow) {
+      const glowFilter = new ctx.pixi.BlurFilter({ strength: f.glow.blur });
+      // Extra container for glow if we want it to be "around"
+      // Simplified: apply a tinted blur filter to a clone or similar
     }
   }
 
@@ -682,11 +753,19 @@ export class PixiSceneRenderer {
       }
     };
 
-    for (const element of frame.elements) {
-      const display = createElementDisplay(ctx, element);
-      applyElementTransform(display, element);
-      frameContainer.addChild(display);
+    function renderRecursive(elements: ElementNode[], parent: PixiContainer) {
+      for (const element of elements) {
+        const display = createElementDisplay(ctx, element);
+        applyElementTransform(display, element);
+        parent.addChild(display);
+
+        if (element.children && element.children.length > 0) {
+          renderRecursive(element.children, display);
+        }
+      }
     }
+
+    renderRecursive(frame.elements, frameContainer);
 
     this.root.addChild(frameContainer);
   }

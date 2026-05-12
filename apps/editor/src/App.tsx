@@ -1281,10 +1281,15 @@ function ImageInspector({ selectedSceneId, selectedElement, onUpdateElement, onD
         <InspectorField label="Brightness" input={<Slider min={0} max={2} step={0.1} value={filters.brightness ?? 1} onChange={(v) => updateFilter({ brightness: v })} size="xs" color="orange" />} />
         <InspectorField label="Contrast" input={<Slider min={0} max={2} step={0.1} value={filters.contrast ?? 1} onChange={(v) => updateFilter({ contrast: v })} size="xs" color="orange" />} />
         <InspectorField label="Saturation" input={<Slider min={0} max={2} step={0.1} value={filters.saturation ?? 1} onChange={(v) => updateFilter({ saturation: v })} size="xs" color="orange" />} />
+        <InspectorField label="Sharpen" input={<Slider min={0} max={2} step={0.1} value={filters.sharpen ?? 0} onChange={(v) => updateFilter({ sharpen: v })} size="xs" color="orange" />} />
+        <InspectorField label="Vignette" input={<Slider min={0} max={1} step={0.05} value={filters.vignette ?? 0} onChange={(v) => updateFilter({ vignette: v })} size="xs" color="orange" />} />
 
         <SimpleGrid cols={2} spacing="xs">
           <Switch label="Mono" size="xs" checked={!!filters.monochrome} onChange={(e) => updateFilter({ monochrome: e.currentTarget.checked })} />
           <Switch label="HDR" size="xs" checked={!!filters.hdr} onChange={(e) => updateFilter({ hdr: e.currentTarget.checked })} />
+          <Switch label="Vintage" size="xs" checked={!!filters.vintage} onChange={(e) => updateFilter({ vintage: e.currentTarget.checked })} />
+          <Switch label="Cinematic" size="xs" checked={!!filters.cinematic} onChange={(e) => updateFilter({ cinematic: e.currentTarget.checked })} />
+          <Switch label="Y2K" size="xs" checked={!!filters.y2k} onChange={(e) => updateFilter({ y2k: e.currentTarget.checked })} />
         </SimpleGrid>
 
         <InspectorField
@@ -1298,36 +1303,53 @@ function ImageInspector({ selectedSceneId, selectedElement, onUpdateElement, onD
             />
           }
         />
+
+        <InspectorField
+          label="Duotone"
+          input={
+            <Group gap={4}>
+              <SwatchPicker value={filters.duotone?.color1 ?? "#000000"} onChange={(c) => updateFilter({ duotone: { color1: c, color2: filters.duotone?.color2 ?? "#ffffff" } })} />
+              <Switch size="xs" checked={!!filters.duotone} onChange={(e) => updateFilter({ duotone: e.currentTarget.checked ? { color1: "#000000", color2: "#ffffff" } : undefined })} />
+            </Group>
+          }
+        />
       </Stack>
 
       <Divider color="rgba(0,0,0,0.08)" />
 
-      {/* ── Crop (Simplified) ── */}
+      {/* ── Crop ── */}
       <Stack gap="xs">
         <Group gap={6}>
           <IconCrop size={14} color="gray" />
           <Text c="gray.5" fz="xs" fw={700} tt="uppercase" lts="0.06em">Crop</Text>
         </Group>
-        <Button
+
+        <Switch
+          label="Enable Crop"
           size="xs"
-          variant="light"
-          color="gray"
-          onClick={() => {
-            // Just a toggle/reset example for now
-            if (selectedElement.content?.crop) {
-              onDispatchOperation({ operation: "crop_image", sceneId: selectedSceneId, elementId: selectedElement.id, crop: undefined as any });
-            } else {
+          checked={!!selectedElement.content?.crop}
+          onChange={(e) => {
+            if (e.currentTarget.checked) {
               onDispatchOperation({
                 operation: "crop_image",
                 sceneId: selectedSceneId,
                 elementId: selectedElement.id,
-                crop: { x: 0, y: 0, width: 200, height: 200 }
+                crop: { x: 0, y: 0, width: selectedElement.layout.width, height: selectedElement.layout.height }
               });
+            } else {
+              onDispatchOperation({ operation: "crop_image", sceneId: selectedSceneId, elementId: selectedElement.id, crop: undefined as any });
             }
           }}
-        >
-          {selectedElement.content?.crop ? "Reset Crop" : "Apply 200x200 Crop"}
-        </Button>
+        />
+
+        {selectedElement.content?.crop && (
+          <SimpleGrid cols={2} spacing="xs">
+            <InspectorField label="CX" input={<NumberInput size="xs" value={selectedElement.content.crop.x} onChange={(v) => onDispatchOperation({ operation: "crop_image", sceneId: selectedSceneId, elementId: selectedElement.id, crop: { ...selectedElement.content!.crop!, x: toNumber(v, 0) } })} />} />
+            <InspectorField label="CY" input={<NumberInput size="xs" value={selectedElement.content.crop.y} onChange={(v) => onDispatchOperation({ operation: "crop_image", sceneId: selectedSceneId, elementId: selectedElement.id, crop: { ...selectedElement.content!.crop!, y: toNumber(v, 0) } })} />} />
+            <InspectorField label="CW" input={<NumberInput size="xs" min={1} value={selectedElement.content.crop.width} onChange={(v) => onDispatchOperation({ operation: "crop_image", sceneId: selectedSceneId, elementId: selectedElement.id, crop: { ...selectedElement.content!.crop!, width: toNumber(v, 1) } })} />} />
+            <InspectorField label="CH" input={<NumberInput size="xs" min={1} value={selectedElement.content.crop.height} onChange={(v) => onDispatchOperation({ operation: "crop_image", sceneId: selectedSceneId, elementId: selectedElement.id, crop: { ...selectedElement.content!.crop!, height: toNumber(v, 1) } })} />} />
+          </SimpleGrid>
+        )}
       </Stack>
     </Stack>
   );

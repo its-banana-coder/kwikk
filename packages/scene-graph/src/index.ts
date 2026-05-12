@@ -155,6 +155,18 @@ export function updateSceneElement(
   elementId: string,
   updater: (element: ElementNode) => ElementNode
 ): ProjectDocument {
+  function updateRecursive(elements: ElementNode[]): ElementNode[] {
+    return elements.map((el) => {
+      if (el.id === elementId) {
+        return updater(el);
+      }
+      if (el.children && el.children.length > 0) {
+        return { ...el, children: updateRecursive(el.children) };
+      }
+      return el;
+    });
+  }
+
   return {
     ...project,
     scenes: project.scenes.map((scene) => {
@@ -164,13 +176,7 @@ export function updateSceneElement(
 
       return {
         ...scene,
-        elements: scene.elements.map((element) => {
-          if (element.id !== elementId) {
-            return element;
-          }
-
-          return updater(element);
-        })
+        elements: updateRecursive(scene.elements)
       };
     })
   };

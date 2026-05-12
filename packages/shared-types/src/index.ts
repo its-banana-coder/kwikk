@@ -116,6 +116,7 @@ export type ElementNode = {
   animations: Animation[];
   overrides?: ManualOverrides;
   content?: ElementContent;
+  children?: ElementNode[];
 };
 
 export type ImageFitMode = "stretch" | "cover" | "contain" | "custom";
