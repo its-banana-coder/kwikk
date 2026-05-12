@@ -59,6 +59,8 @@ function createTextNode(pixi: PixiModule, element: ElementNode): PixiContainer {
     );
   }
 
+  const align = element.style.textAlign ?? "left";
+
   const text = new pixi.Text({
     text: element.content?.text ?? element.semanticRole ?? element.id,
     style: {
@@ -67,10 +69,22 @@ function createTextNode(pixi: PixiModule, element: ElementNode): PixiContainer {
       fontSize: element.style.fontSize ?? 48,
       fontWeight: normalizeFontWeight(element.style.fontWeight) ?? "600",
       fontStyle: (element.style.fontStyle ?? "normal") as any,
+      align: align as any,
       wordWrap: true,
       wordWrapWidth: element.layout.width
     }
   });
+
+  if (align === "center") {
+    text.anchor.x = 0.5;
+    text.x = element.layout.width / 2;
+  } else if (align === "right") {
+    text.anchor.x = 1;
+    text.x = element.layout.width;
+  } else {
+    text.anchor.x = 0;
+    text.x = 0;
+  }
 
   container.addChild(text);
   return container;
@@ -103,17 +117,84 @@ function createPlaceholderNode(
   return container;
 }
 
+function createShapeNode(pixi: PixiModule, element: ElementNode): PixiContainer {
+  const container = new pixi.Container();
+  const { width, height } = element.layout;
+  const fillColor = element.style.backgroundColor ?? "#334155";
+  const radius = element.style.borderRadius ?? 8;
+  const fillPattern = element.style.fillPattern ?? "solid";
+  const fillColor2 = element.style.fillColor2;
+  const borderColor = element.style.borderColor;
+  const borderWidth = element.style.borderWidth ?? 0;
+
+  // Base fill
+  const base = new pixi.Graphics();
+  if (fillPattern === "gradient" && fillColor2) {
+    try {
+      const gradient = new (pixi as any).FillGradient(0, 0, width, height);
+      gradient.addColorStop(0, fillColor);
+      gradient.addColorStop(1, fillColor2);
+      base.roundRect(0, 0, width, height, radius).fill(gradient);
+    } catch {
+      base.roundRect(0, 0, width, height, radius).fill({ color: fillColor });
+    }
+  } else {
+    base.roundRect(0, 0, width, height, radius).fill({ color: fillColor });
+  }
+  container.addChild(base);
+
+  // Pattern overlay — clipped to shape bounds via a mask
+  if ((fillPattern === "stripes" || fillPattern === "dots" || fillPattern === "grid") && fillColor2) {
+    const patternColor = fillColor2;
+    const overlay = new pixi.Graphics();
+    if (fillPattern === "stripes") {
+      const gap = 20;
+      for (let i = -(height); i < width + height; i += gap * 2) {
+        overlay.moveTo(i, 0).lineTo(i + height, height);
+      }
+      overlay.stroke({ color: patternColor, width: 6, alpha: 0.45 });
+    } else if (fillPattern === "dots") {
+      const dotR = 3;
+      const step = 18;
+      for (let row = step / 2; row < height; row += step) {
+        for (let col = step / 2; col < width; col += step) {
+          overlay.circle(col, row, dotR);
+        }
+      }
+      overlay.fill({ color: patternColor, alpha: 0.55 });
+    } else if (fillPattern === "grid") {
+      const step = 24;
+      for (let x = 0; x <= width; x += step) {
+        overlay.moveTo(x, 0).lineTo(x, height);
+      }
+      for (let y = 0; y <= height; y += step) {
+        overlay.moveTo(0, y).lineTo(width, y);
+      }
+      overlay.stroke({ color: patternColor, width: 1, alpha: 0.4 });
+    }
+    // Mask clips the pattern to the rounded-rect shape bounds
+    const clipMask = new pixi.Graphics().roundRect(0, 0, width, height, radius).fill({ color: 0xffffff });
+    overlay.mask = clipMask as any;
+    container.addChild(clipMask, overlay);
+  }
+
+  // Border stroke
+  if (borderWidth > 0 && borderColor) {
+    const border = new pixi.Graphics()
+      .roundRect(0, 0, width, height, radius)
+      .stroke({ color: borderColor, width: borderWidth });
+    container.addChild(border);
+  }
+
+  return container;
+}
+
 function createElementDisplay(pixi: PixiModule, element: ElementNode): PixiContainer {
   switch (element.type) {
     case "text":
       return createTextNode(pixi, element);
     case "shape":
-      return createPlaceholderNode(
-        pixi,
-        element,
-        element.style.backgroundColor ?? "#334155",
-        element.content?.label ?? "Rectangle"
-      );
+      return createShapeNode(pixi, element);
     case "image":
       return createPlaceholderNode(
         pixi,

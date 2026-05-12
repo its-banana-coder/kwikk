@@ -34,7 +34,8 @@ export const DEFAULT_STYLE: StyleProps = {
   fontWeight: 600,
   fontStyle: "normal",
   color: "#0f172a",
-  backgroundColor: "transparent"
+  backgroundColor: "transparent",
+  textAlign: "left"
 };
 
 export function createElementNode(input: {

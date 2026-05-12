@@ -33,6 +33,12 @@ export interface StyleProps {
   fontStyle?: string;
   color?: string;
   backgroundColor?: string;
+  textAlign?: string;
+  borderColor?: string;
+  borderWidth?: number;
+  borderRadius?: number;
+  fillPattern?: "solid" | "gradient" | "stripes" | "dots" | "grid";
+  fillColor2?: string;
 }
 
 export interface ElementContent {

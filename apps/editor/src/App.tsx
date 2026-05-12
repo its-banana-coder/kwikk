@@ -8,10 +8,11 @@ import {
   Badge,
   Box,
   Button,
-  ColorInput,
+  ColorSwatch,
   Divider,
   Group,
   NumberInput,
+  Popover,
   ScrollArea,
   SegmentedControl,
   Select,
@@ -39,7 +40,11 @@ import {
   IconTextSize,
   IconTimeline,
   IconTrash,
-  IconUpload
+  IconUpload,
+  IconAlignLeft,
+  IconAlignCenter,
+  IconAlignRight,
+  IconAlignJustified
 } from "@tabler/icons-react";
 import type { AnimationType, ElementNode, Scene } from "@kwikk/shared-types";
 import { useEffect, useRef, useState } from "react";
@@ -67,6 +72,63 @@ function humanizePreset(v: string): string {
 
 function nextElId(): string {
   return `el_${Math.random().toString(36).slice(2, 9)}`;
+}
+
+const PALETTE = [
+  "#ffffff", "#f1f5f9", "#94a3b8", "#475569", "#1e293b", "#0f172a",
+  "#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#3b82f6",
+  "#8b5cf6", "#ec4899", "#f43f5e", "#10b981", "#6366f1", "#4f46e5",
+  "#7c3aed", "#db2777", "#0369a1", "#15803d", "#b45309", "#9f1239"
+];
+
+function SwatchPicker({ value, onChange, allowNone }: { value: string; onChange: (v: string) => void; allowNone?: boolean }) {
+  return (
+    <Popover position="bottom-start" withinPortal>
+      <Popover.Target>
+        <Box
+          style={{
+            width: "100%",
+            height: 30,
+            borderRadius: 6,
+            background: value || "transparent",
+            border: "1.5px solid rgba(0,0,0,0.15)",
+            cursor: "pointer",
+            position: "relative"
+          }}
+        >
+          {!value && (
+            <Box style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Text fz="xs" c="gray.5">None</Text>
+            </Box>
+          )}
+        </Box>
+      </Popover.Target>
+      <Popover.Dropdown p="xs">
+        <SimpleGrid cols={6} spacing={4}>
+          {allowNone && (
+            <Box
+              style={{
+                width: 22, height: 22, borderRadius: 4, cursor: "pointer",
+                border: "1.5px solid rgba(0,0,0,0.2)",
+                background: "repeating-linear-gradient(45deg, #ccc 0, #ccc 2px, transparent 0, transparent 50%) 0/8px 8px"
+              }}
+              title="None"
+              onClick={() => onChange("")}
+            />
+          )}
+          {PALETTE.map((c) => (
+            <ColorSwatch
+              key={c}
+              color={c}
+              size={22}
+              style={{ cursor: "pointer", outline: value === c ? "2px solid #3b82f6" : "none", outlineOffset: 1, borderRadius: 4 }}
+              onClick={() => onChange(c)}
+            />
+          ))}
+        </SimpleGrid>
+      </Popover.Dropdown>
+    </Popover>
+  );
 }
 
 function applyMotionPreset(
@@ -183,16 +245,16 @@ export default function App() {
 
   function addShape(variant: "rectangle" | "square") {
     const elementId = nextElId();
+    const isSquare = variant === "square";
     dispatchOperation({
       operation: "add_element",
       sceneId: selectedSceneId,
       elementId,
       type: "shape",
-      content: { shape: "rectangle", label: variant === "square" ? "Square" : "Rectangle" }
+      content: { shape: "rectangle" },
+      style: { backgroundColor: "#4f46e5", borderRadius: 8 },
+      layout: isSquare ? { width: 200, height: 200 } : { width: 240, height: 120 }
     });
-    if (variant === "square") {
-      dispatchOperation({ operation: "patch_element", sceneId: selectedSceneId, elementId, patch: { layout: { width: 200, height: 200 } } });
-    }
   }
 
   function toggleTool(tool: SidebarTool) {
@@ -336,8 +398,8 @@ export default function App() {
                           type: "text",
                           semanticRole: "section_title",
                           content: { text: "Title" },
-                          style: { fontSize: 80, color: "#000000", fontWeight: "700" },
-                          layout: { width: 600, height: 100 },
+                          style: { fontSize: 80, color: "#000000", fontWeight: "700", textAlign: "center" },
+                          layout: { x: 0, width: project.viewport.width, height: 100 },
                         });
                       }}
                     >
@@ -636,8 +698,7 @@ function ElementInspector({ selectedSceneId, selectedElement, project, onUpdateE
             <InspectorField
               label="Color"
               input={
-                <ColorInput
-                  format="hex"
+                <SwatchPicker
                   value={selectedElement.style.color ?? "#f8fafc"}
                   onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { style: { color: v } })}
                 />
@@ -646,14 +707,28 @@ function ElementInspector({ selectedSceneId, selectedElement, project, onUpdateE
             <InspectorField
               label="BG"
               input={
-                <ColorInput
-                  format="hex"
+                <SwatchPicker
                   value={selectedElement.style.backgroundColor ?? "#000000"}
                   onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { style: { backgroundColor: v } })}
                 />
               }
             />
           </SimpleGrid>
+          <InspectorField
+            label="Align"
+            input={
+              <SegmentedControl
+                data={[
+                  { value: 'left', label: <IconAlignLeft size={16} /> },
+                  { value: 'center', label: <IconAlignCenter size={16} /> },
+                  { value: 'right', label: <IconAlignRight size={16} /> },
+                  { value: 'justify', label: <IconAlignJustified size={16} /> },
+                ]}
+                value={selectedElement.style.textAlign || 'left'}
+                onChange={(value) => onUpdateElement(selectedSceneId, selectedElement.id, { style: { textAlign: value } })}
+              />
+            }
+          />
           <Group grow>
             <Switch
               label="Bold"
@@ -671,16 +746,102 @@ function ElementInspector({ selectedSceneId, selectedElement, project, onUpdateE
         </>
       )}
 
+      {selectedElement.type === "shape" && (
+        <>
+          <Divider color="rgba(0,0,0,0.08)" />
+          <Stack gap="xs">
+            <Text c="gray.5" fz="xs" fw={700} tt="uppercase" lts="0.06em">Appearance</Text>
+            <SimpleGrid cols={2} spacing="xs">
+              <InspectorField
+                label="Fill"
+                input={
+                  <SwatchPicker
+                    value={selectedElement.style.backgroundColor ?? "#334155"}
+                    onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { style: { backgroundColor: v } })}
+                  />
+                }
+              />
+              <InspectorField
+                label="Pattern"
+                input={
+                  <Select
+                    data={[
+                      { value: "solid", label: "Solid" },
+                      { value: "gradient", label: "Gradient" },
+                      { value: "stripes", label: "Stripes" },
+                      { value: "dots", label: "Dots" },
+                      { value: "grid", label: "Grid" }
+                    ]}
+                    value={selectedElement.style.fillPattern ?? "solid"}
+                    onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { style: { fillPattern: (v ?? "solid") as any } })}
+                  />
+                }
+              />
+            </SimpleGrid>
+            {(selectedElement.style.fillPattern === "gradient" ||
+              selectedElement.style.fillPattern === "stripes" ||
+              selectedElement.style.fillPattern === "dots" ||
+              selectedElement.style.fillPattern === "grid") && (
+              <InspectorField
+                label={selectedElement.style.fillPattern === "gradient" ? "End color" : "Pattern color"}
+                input={
+                  <SwatchPicker
+                    value={selectedElement.style.fillColor2 ?? "#64748b"}
+                    onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { style: { fillColor2: v } })}
+                  />
+                }
+              />
+            )}
+            <SimpleGrid cols={2} spacing="xs">
+              <InspectorField
+                label="Border"
+                input={
+                  <SwatchPicker
+                    allowNone
+                    value={selectedElement.style.borderColor ?? ""}
+                    onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { style: { borderColor: v || undefined } })}
+                  />
+                }
+              />
+              <InspectorField
+                label="B. Width"
+                input={
+                  <NumberInput
+                    min={0}
+                    max={32}
+                    value={selectedElement.style.borderWidth ?? 0}
+                    onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { style: { borderWidth: toNumber(v, 0) } })}
+                  />
+                }
+              />
+            </SimpleGrid>
+            <InspectorField
+              label="Radius"
+              input={
+                <NumberInput
+                  min={0}
+                  max={200}
+                  value={selectedElement.style.borderRadius ?? 8}
+                  onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { style: { borderRadius: toNumber(v, 8) } })}
+                />
+              }
+            />
+          </Stack>
+        </>
+      )}
+
       <Divider color="rgba(0,0,0,0.08)" />
 
       <Stack gap="xs">
         <Group justify="space-between">
           <Text c="gray.5" fz="xs" fw={700} tt="uppercase" lts="0.06em">Layout</Text>
-          <Button variant="subtle" color="gray" size="compact-xs" onClick={() => setShowDimensions((v) => !v)}>
-            {showDimensions ? "Hide" : "Dimensions"}
-          </Button>
+          {selectedElement.type !== "shape" && (
+            <Button variant="subtle" color="gray" size="compact-xs" onClick={() => setShowDimensions((v) => !v)}>
+              {showDimensions ? "Hide" : "Dimensions"}
+            </Button>
+          )}
         </Group>
-        {showDimensions && (
+        {(showDimensions || selectedElement.type === "shape") && (
           <SimpleGrid cols={2} spacing="xs">
             <InspectorField label="X" input={<NumberInput value={selectedElement.layout.x} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { x: toNumber(v, selectedElement.layout.x) } })} />} />
             <InspectorField label="Y" input={<NumberInput value={selectedElement.layout.y} onChange={(v) => onUpdateElement(selectedSceneId, selectedElement.id, { layout: { y: toNumber(v, selectedElement.layout.y) } })} />} />
@@ -777,8 +938,7 @@ function SceneInspector({ scene, onUpdateScene }: SceneInspectorProps) {
       <InspectorField
         label="BG Color"
         input={
-          <ColorInput
-            format="hex"
+          <SwatchPicker
             value={scene.backgroundColor ?? "#ffffff"}
             onChange={(v) => onUpdateScene(scene.id, { backgroundColor: v })}
           />
