@@ -1,5 +1,5 @@
 import { resolveElementNodeAtTime } from "@kwikk/animation-engine";
-import type { ElementNode, ProjectDocument, StyleProps, TextSpan, Viewport } from "@kwikk/shared-types";
+import type { ElementNode, ProjectDocument, SceneBackground, Viewport } from "@kwikk/shared-types";
 import type {
   Application as PixiApplication,
   Container as PixiContainer,
@@ -19,6 +19,7 @@ export interface ResolvedRenderFrame {
   sceneId: string | null;
   viewport: Viewport;
   backgroundColor: string;
+  background?: SceneBackground;
   elements: ElementNode[];
 }
 
@@ -55,29 +56,7 @@ function createRoundedRect(
   return new pixi.Graphics().roundRect(0, 0, width, height, 24).fill({ color, alpha });
 }
 
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
 
-function spansToHtml(spans: TextSpan[], base: StyleProps): string {
-  return spans
-    .map((span) => {
-      const css: string[] = [];
-      const fw = span.style?.fontWeight ?? base.fontWeight;
-      const fi = span.style?.fontStyle;
-      const col = span.style?.color;
-      const fs = span.style?.fontSize;
-      const ff = span.style?.fontFamily;
-      if (fw !== undefined) css.push(`font-weight:${fw}`);
-      if (fi) css.push(`font-style:${fi}`);
-      if (col) css.push(`color:${col}`);
-      if (fs !== undefined) css.push(`font-size:${fs}px`);
-      if (ff) css.push(`font-family:${ff}`);
-      const content = escapeHtml(span.text);
-      return css.length > 0 ? `<span style="${css.join(";")};">${content}</span>` : content;
-    })
-    .join("");
-}
 
 function createTextNode(pixi: PixiModule, element: ElementNode): PixiContainer {
   const container = new pixi.Container();
@@ -91,32 +70,37 @@ function createTextNode(pixi: PixiModule, element: ElementNode): PixiContainer {
 
   const align = element.style.textAlign ?? "left";
   const richText = element.content?.richText;
-  const baseStyle = {
-    fontFamily: element.style.fontFamily ?? "Inter",
-    fontSize: element.style.fontSize ?? 48,
-    fontWeight: normalizeFontWeight(element.style.fontWeight) ?? "600",
-    fontStyle: (element.style.fontStyle ?? "normal") as any,
-    align: align as any,
-    wordWrap: true,
-    wordWrapWidth: element.layout.width
+
+  // Derive the effective style: element.style is the primary source (always kept up-to-date
+  // by the inspector). When richText spans exist we also check the first span for colour /
+  // weight / italic overrides so at least the dominant formatting shows in playback.
+  const firstSpanStyle = richText?.[0]?.style;
+  const effectiveStyle = {
+    fontFamily:    element.style.fontFamily    ?? "Inter",
+    fontSize:      element.style.fontSize      ?? 48,
+    fontWeight:    normalizeFontWeight(element.style.fontWeight) ?? "600",
+    fontStyle:     (element.style.fontStyle    ?? "normal") as any,
+    color:         element.style.color         ?? "#0f172a",
+    // First-span overrides for inline weight / italic / colour (font+size come from element.style)
+    ...(firstSpanStyle?.fontWeight !== undefined ? { fontWeight: normalizeFontWeight(firstSpanStyle.fontWeight) } : {}),
+    ...(firstSpanStyle?.fontStyle  !== undefined ? { fontStyle:  firstSpanStyle.fontStyle  as any }              : {}),
+    ...(firstSpanStyle?.color      !== undefined ? { color:      firstSpanStyle.color       }                    : {}),
   };
 
-  let textNode: PixiContainer;
-
-  if (richText && richText.length > 0 && "HTMLText" in pixi) {
-    const HTMLTextClass = (pixi as any).HTMLText as new (opts: object) => PixiContainer & { anchor?: { x: number }; x: number };
-    const html = spansToHtml(richText, element.style);
-    textNode = new HTMLTextClass({
-      text: html,
-      style: { fill: element.style.color ?? "#0f172a", ...baseStyle }
-    });
-  } else {
-    const plain = element.content?.text ?? element.semanticRole ?? element.id;
-    textNode = new pixi.Text({
-      text: plain,
-      style: { fill: element.style.color ?? "#0f172a", ...baseStyle }
-    });
-  }
+  const plain = element.content?.text ?? element.semanticRole ?? element.id;
+  const textNode = new pixi.Text({
+    text: plain,
+    style: {
+      fill:          effectiveStyle.color,
+      fontFamily:    effectiveStyle.fontFamily,
+      fontSize:      effectiveStyle.fontSize,
+      fontWeight:    effectiveStyle.fontWeight,
+      fontStyle:     effectiveStyle.fontStyle,
+      align:         align as any,
+      wordWrap:      true,
+      wordWrapWidth: element.layout.width
+    }
+  });
 
   const t = textNode as any;
   if (align === "center") {
@@ -322,6 +306,7 @@ export function resolveRenderFrame(
     sceneId: active.scene.id,
     viewport: project.viewport,
     backgroundColor: active.scene.backgroundColor ?? "#ffffff",
+    background: active.scene.background,
     elements: active.scene.elements
       .map((element) => resolveElementNodeAtTime(element, active.localTimeMs, input.showAllElements))
       .filter((element) => element.id !== input.excludeElementId)
@@ -409,11 +394,100 @@ export class PixiSceneRenderer {
     frameContainer.scale.set(scale);
     frameContainer.sortableChildren = true;
 
-    frameContainer.addChild(
-      new this.pixi.Graphics()
+    // Draw scene background
+    const bgOpacity = frame.background?.opacity ?? 1;
+    const bgColor2 = frame.background?.color2;
+
+    if (bgColor2) {
+      // Gradient background
+      try {
+        const angle = frame.background?.gradientAngle ?? 180;
+        const rad = (angle * Math.PI) / 180;
+        const w = frame.viewport.width;
+        const h = frame.viewport.height;
+        const cx = w / 2;
+        const cy = h / 2;
+        const len = Math.sqrt(w * w + h * h) / 2;
+        const x0 = cx - Math.sin(rad) * len;
+        const y0 = cy - Math.cos(rad) * len;
+        const x1 = cx + Math.sin(rad) * len;
+        const y1 = cy + Math.cos(rad) * len;
+        const gradient = new (this.pixi as any).FillGradient(x0, y0, x1, y1);
+        gradient.addColorStop(0, frame.backgroundColor);
+        gradient.addColorStop(1, bgColor2);
+        const bgGraphics = new this.pixi.Graphics()
+          .rect(0, 0, frame.viewport.width, frame.viewport.height)
+          .fill(gradient);
+        bgGraphics.alpha = bgOpacity;
+        frameContainer.addChild(bgGraphics);
+      } catch {
+        const bgGraphics = new this.pixi.Graphics()
+          .rect(0, 0, frame.viewport.width, frame.viewport.height)
+          .fill({ color: frame.backgroundColor });
+        bgGraphics.alpha = bgOpacity;
+        frameContainer.addChild(bgGraphics);
+      }
+    } else {
+      const bgGraphics = new this.pixi.Graphics()
         .rect(0, 0, frame.viewport.width, frame.viewport.height)
-        .fill({ color: frame.backgroundColor })
-    );
+        .fill({ color: frame.backgroundColor });
+      bgGraphics.alpha = bgOpacity;
+      frameContainer.addChild(bgGraphics);
+    }
+
+    // Draw background image if set
+    const bgImageSrc = frame.background?.imageSrc;
+    if (bgImageSrc) {
+      const texture = this.pixi.Assets.cache.get(bgImageSrc);
+      if (!texture) {
+        this.pixi.Assets.load(bgImageSrc).then(() => {
+          if (this.lastFrame) this.drawFrame(this.lastFrame);
+        }).catch(() => {});
+      } else {
+        try {
+          const bgSprite = new this.pixi.Sprite(texture);
+          const vw = frame.viewport.width;
+          const vh = frame.viewport.height;
+          const tw = texture.width;
+          const th = texture.height;
+          const fitMode = frame.background?.imageFit ?? "stretch";
+
+          if (fitMode === "stretch") {
+            bgSprite.width = vw;
+            bgSprite.height = vh;
+          } else if (fitMode === "cover") {
+            const coverScale = Math.max(vw / tw, vh / th);
+            bgSprite.width = tw * coverScale;
+            bgSprite.height = th * coverScale;
+            bgSprite.x = (vw - bgSprite.width) / 2;
+            bgSprite.y = (vh - bgSprite.height) / 2;
+          } else if (fitMode === "contain") {
+            const containScale = Math.min(vw / tw, vh / th);
+            bgSprite.width = tw * containScale;
+            bgSprite.height = th * containScale;
+            bgSprite.x = (vw - bgSprite.width) / 2;
+            bgSprite.y = (vh - bgSprite.height) / 2;
+          } else if (fitMode === "custom") {
+            const customScale = frame.background?.imageScale ?? Math.max(vw / tw, vh / th);
+            bgSprite.width = tw * customScale;
+            bgSprite.height = th * customScale;
+            bgSprite.x = frame.background?.imageOffsetX ?? 0;
+            bgSprite.y = frame.background?.imageOffsetY ?? 0;
+          }
+
+          bgSprite.alpha = bgOpacity;
+
+          // Clip the background image to viewport bounds
+          const clipMask = new this.pixi.Graphics()
+            .rect(0, 0, vw, vh)
+            .fill({ color: 0xffffff });
+          bgSprite.mask = clipMask as any;
+          frameContainer.addChild(clipMask, bgSprite);
+        } catch {
+          // skip background image on error
+        }
+      }
+    }
 
     const ctx: RenderContext = {
       pixi: this.pixi,

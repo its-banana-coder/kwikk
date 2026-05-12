@@ -10,7 +10,8 @@ import type {
   Animation,
   ElementNode,
   ProjectDocument,
-  Scene
+  Scene,
+  SceneBackground
 } from "@kwikk/shared-types";
 import { getTimelineDurationMs } from "@kwikk/timeline";
 
@@ -56,7 +57,7 @@ interface EditorState {
   addScene: () => void;
   deleteScene: (sceneId: string) => void;
   reorderScenes: (fromIndex: number, toIndex: number) => void;
-  updateScene: (sceneId: string, patch: { name?: string; backgroundColor?: string }) => void;
+  updateScene: (sceneId: string, patch: { name?: string; backgroundColor?: string; background?: Partial<SceneBackground> }) => void;
   updateSceneDuration: (sceneId: string, durationMs: number) => void;
 }
 

@@ -46,8 +46,8 @@ import {
   IconAlignRight,
   IconAlignJustified
 } from "@tabler/icons-react";
-import type { AnimationType, ElementNode, Scene } from "@kwikk/shared-types";
-import { useEffect, useRef, useState } from "react";
+import type { AnimationType, ElementNode, Scene, SceneBackground, ImageFitMode } from "@kwikk/shared-types";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { PreviewCanvas } from "./PreviewCanvas";
 import type { EditorOperation, ElementPatch } from "./store";
 import { useEditorStore, useSelectedElement, useSelectedScene } from "./store";
@@ -183,6 +183,8 @@ export default function App() {
   const [activeTool, setActiveTool] = useState<SidebarTool>(null);
   const [inspectorTab, setInspectorTab] = useState<"element" | "scene">("element");
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [renamingSceneId, setRenamingSceneId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const frame = resolveRenderFrame(project, { timeMs: timeline.currentTimeMs, showAllElements });
@@ -574,13 +576,18 @@ export default function App() {
             {project.timelineTracks.map((track) => {
               const scene = project.scenes.find((s) => s.id === track.sceneId);
               const active = track.sceneId === selectedSceneId;
+              const isRenaming = renamingSceneId === track.sceneId;
               return (
                 <Box
                   key={track.id}
                   onClick={() => selectScene(track.sceneId)}
+                  onDoubleClick={() => {
+                    setRenamingSceneId(track.sceneId);
+                    setRenameValue(scene?.name ?? track.sceneId);
+                  }}
                   style={{
                     flexShrink: 0,
-                    width: 72,
+                    minWidth: 72,
                     height: 32,
                     borderRadius: 6,
                     border: `1px solid ${active ? "rgba(255,173,92,0.45)" : "rgba(0,0,0,0.09)"}`,
@@ -593,9 +600,41 @@ export default function App() {
                     transition: "border-color 0.12s, background 0.12s"
                   }}
                 >
-                  <Text fz="xs" fw={600} c={active ? "orange.7" : "gray.7"} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
-                    {scene?.name ?? track.sceneId}
-                  </Text>
+                  {isRenaming ? (
+                    <input
+                      autoFocus
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      onBlur={() => {
+                        if (renameValue.trim()) updateScene(track.sceneId, { name: renameValue.trim() });
+                        setRenamingSceneId(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          if (renameValue.trim()) updateScene(track.sceneId, { name: renameValue.trim() });
+                          setRenamingSceneId(null);
+                        } else if (e.key === "Escape") {
+                          setRenamingSceneId(null);
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        width: "100%",
+                        border: "none",
+                        outline: "none",
+                        background: "transparent",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: active ? "#c2410c" : "#374151",
+                        textAlign: "center",
+                        padding: 0
+                      }}
+                    />
+                  ) : (
+                    <Text fz="xs" fw={600} c={active ? "orange.7" : "gray.7"} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
+                      {scene?.name ?? track.sceneId}
+                    </Text>
+                  )}
                 </Box>
               );
             })}
@@ -700,9 +739,20 @@ function ElementInspector({ selectedSceneId, selectedElement, project, onUpdateE
   }
 
   function applyTextStyle(styleOverride: Parameters<typeof applySpanFormat>[3] & Partial<import("@kwikk/shared-types").StyleProps>) {
-    if (hasSelection || lastSelectionRef.current) {
+    const isSpanOnlyProp = "color" in styleOverride || "fontWeight" in styleOverride || "fontStyle" in styleOverride;
+    const hasElementProp = "fontFamily" in styleOverride || "fontSize" in styleOverride;
+
+    if (hasElementProp) {
+      // Font family and size always update the element-level style so Pixi's
+      // baseStyle (used for both plain text and HTMLText fallback) stays correct.
+      onUpdateElement(selectedSceneId, selectedElement.id, { style: styleOverride });
+    }
+
+    if (isSpanOnlyProp && (hasSelection || lastSelectionRef.current)) {
+      // Bold / italic / color: apply as per-character span formatting when
+      // there is an active (or recently cleared) text selection.
       applySpanStyle(styleOverride);
-    } else {
+    } else if (isSpanOnlyProp) {
       onUpdateElement(selectedSceneId, selectedElement.id, { style: styleOverride });
     }
   }
@@ -987,14 +1037,159 @@ function AnimationRow({ animation }: { animation: { type: AnimationType; startMs
   );
 }
 
+// ── Background image drag positioner ──────────────────────────────────────────
+
+interface BgImagePositionerProps {
+  imageSrc: string;
+  imageScale: number;
+  offsetX: number;
+  offsetY: number;
+  viewportWidth: number;
+  viewportHeight: number;
+  onOffsetChange: (x: number, y: number) => void;
+}
+
+function BgImagePositioner({ imageSrc, imageScale, offsetX, offsetY, viewportWidth, viewportHeight, onOffsetChange }: BgImagePositionerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dragging, setDragging] = useState(false);
+  const dragStart = useRef<{ mx: number; my: number; ox: number; oy: number } | null>(null);
+  const [imgNatural, setImgNatural] = useState<{ w: number; h: number } | null>(null);
+
+  const handleImgLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    setImgNatural({ w: img.naturalWidth, h: img.naturalHeight });
+  }, []);
+
+  const PREVIEW_WIDTH = 200;
+  const previewScale = PREVIEW_WIDTH / viewportWidth;
+  const previewHeight = viewportHeight * previewScale;
+
+  const imgW = imgNatural ? imgNatural.w * imageScale * previewScale : 0;
+  const imgH = imgNatural ? imgNatural.h * imageScale * previewScale : 0;
+  const imgX = offsetX * previewScale;
+  const imgY = offsetY * previewScale;
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    setDragging(true);
+    dragStart.current = { mx: e.clientX, my: e.clientY, ox: offsetX, oy: offsetY };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!dragging || !dragStart.current) return;
+    const dx = (e.clientX - dragStart.current.mx) / previewScale;
+    const dy = (e.clientY - dragStart.current.my) / previewScale;
+    onOffsetChange(
+      Math.round(dragStart.current.ox + dx),
+      Math.round(dragStart.current.oy + dy)
+    );
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    setDragging(false);
+    dragStart.current = null;
+    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+  };
+
+  return (
+    <Stack gap={4}>
+      <Text c="gray.5" fz="xs">Drag to reposition</Text>
+      <Box
+        ref={containerRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        style={{
+          width: PREVIEW_WIDTH,
+          height: previewHeight,
+          borderRadius: 6,
+          border: "1px solid rgba(0,0,0,0.12)",
+          background: "#0f172a",
+          overflow: "hidden",
+          position: "relative",
+          cursor: dragging ? "grabbing" : "grab",
+          userSelect: "none",
+          touchAction: "none"
+        }}
+      >
+        <img
+          src={imageSrc}
+          alt=""
+          onLoad={handleImgLoad}
+          draggable={false}
+          style={{
+            position: "absolute",
+            left: imgX,
+            top: imgY,
+            width: imgW || "auto",
+            height: imgH || "auto",
+            pointerEvents: "none"
+          }}
+        />
+        {/* Viewport border indicator */}
+        <Box
+          style={{
+            position: "absolute",
+            inset: 0,
+            border: "2px dashed rgba(255,140,50,0.5)",
+            borderRadius: 4,
+            pointerEvents: "none"
+          }}
+        />
+      </Box>
+      <SimpleGrid cols={2} spacing={4}>
+        <InspectorField
+          label="X"
+          input={
+            <NumberInput
+              size="xs"
+              value={offsetX}
+              onChange={(v) => onOffsetChange(toNumber(v, offsetX), offsetY)}
+            />
+          }
+        />
+        <InspectorField
+          label="Y"
+          input={
+            <NumberInput
+              size="xs"
+              value={offsetY}
+              onChange={(v) => onOffsetChange(offsetX, toNumber(v, offsetY))}
+            />
+          }
+        />
+      </SimpleGrid>
+    </Stack>
+  );
+}
+
 // ── Scene inspector ───────────────────────────────────────────────────────────
 
 interface SceneInspectorProps {
   scene: Scene;
-  onUpdateScene: (sceneId: string, patch: { name?: string; backgroundColor?: string }) => void;
+  onUpdateScene: (sceneId: string, patch: { name?: string; backgroundColor?: string; background?: Partial<SceneBackground> }) => void;
 }
 
 function SceneInspector({ scene, onUpdateScene }: SceneInspectorProps) {
+  const bgFileRef = useRef<HTMLInputElement>(null);
+  const bg = scene.background ?? {};
+  const hasGradient = !!bg.color2;
+  const hasImage = !!bg.imageSrc;
+
+  function handleBgImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const src = ev.target?.result as string;
+      if (src) onUpdateScene(scene.id, { background: { imageSrc: src } });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }
+
   return (
     <Stack gap="md" pt={4}>
       <Group justify="space-between" wrap="nowrap">
@@ -1006,12 +1201,183 @@ function SceneInspector({ scene, onUpdateScene }: SceneInspectorProps) {
         </Group>
       </Group>
 
+      {/* ── Background Color ── */}
+      <Divider color="rgba(0,0,0,0.08)" />
+      <Text c="gray.5" fz="xs" fw={700} tt="uppercase" lts="0.06em">Background</Text>
+
       <InspectorField
-        label="BG Color"
+        label="Color"
         input={
           <SwatchPicker
             value={scene.backgroundColor ?? "#ffffff"}
             onChange={(v) => onUpdateScene(scene.id, { backgroundColor: v })}
+          />
+        }
+      />
+
+      {/* ── Gradient ── */}
+      <Switch
+        label="Gradient"
+        size="xs"
+        checked={hasGradient}
+        onChange={(e) => {
+          if (e.currentTarget.checked) {
+            onUpdateScene(scene.id, { background: { color2: "#000000", gradientAngle: 180 } });
+          } else {
+            onUpdateScene(scene.id, { background: { color2: undefined, gradientAngle: undefined } });
+          }
+        }}
+      />
+
+      {hasGradient && (
+        <>
+          <InspectorField
+            label="Color 2"
+            input={
+              <SwatchPicker
+                value={bg.color2 ?? "#000000"}
+                onChange={(v) => onUpdateScene(scene.id, { background: { color2: v } })}
+              />
+            }
+          />
+          <InspectorField
+            label="Angle"
+            input={
+              <Slider
+                min={0}
+                max={360}
+                step={1}
+                value={bg.gradientAngle ?? 180}
+                onChange={(v) => onUpdateScene(scene.id, { background: { gradientAngle: v } })}
+                label={(v) => `${v}\u00b0`}
+                size="xs"
+                color="orange"
+              />
+            }
+          />
+        </>
+      )}
+
+      {/* ── Background Image ── */}
+      <Divider color="rgba(0,0,0,0.08)" />
+      <Text c="gray.5" fz="xs" fw={700} tt="uppercase" lts="0.06em">Background Image</Text>
+
+      <input ref={bgFileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleBgImageUpload} />
+      {hasImage ? (
+        <Stack gap={6}>
+          <Box
+            style={{
+              width: "100%",
+              aspectRatio: "16/9",
+              borderRadius: 8,
+              overflow: "hidden",
+              border: "1px solid rgba(0,0,0,0.09)",
+              position: "relative"
+            }}
+          >
+            <img
+              src={bg.imageSrc}
+              alt=""
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            />
+          </Box>
+
+          {/* Fit mode selector */}
+          <InspectorField
+            label="Fit"
+            input={
+              <SegmentedControl
+                size="xs"
+                data={[
+                  { value: "stretch", label: "Stretch" },
+                  { value: "cover", label: "Cover" },
+                  { value: "contain", label: "Contain" },
+                  { value: "custom", label: "Custom" }
+                ]}
+                value={bg.imageFit ?? "stretch"}
+                onChange={(v) => onUpdateScene(scene.id, { background: { imageFit: v as ImageFitMode } })}
+              />
+            }
+          />
+
+          {/* Custom mode controls */}
+          {(bg.imageFit === "custom") && (
+            <>
+              <InspectorField
+                label="Scale"
+                input={
+                  <Slider
+                    min={0.1}
+                    max={5}
+                    step={0.01}
+                    value={bg.imageScale ?? 1}
+                    onChange={(v) => onUpdateScene(scene.id, { background: { imageScale: v } })}
+                    label={(v) => `${Math.round(v * 100)}%`}
+                    size="xs"
+                    color="orange"
+                  />
+                }
+              />
+              <BgImagePositioner
+                imageSrc={bg.imageSrc!}
+                imageScale={bg.imageScale ?? 1}
+                offsetX={bg.imageOffsetX ?? 0}
+                offsetY={bg.imageOffsetY ?? 0}
+                viewportWidth={1080}
+                viewportHeight={1920}
+                onOffsetChange={(x, y) => onUpdateScene(scene.id, { background: { imageOffsetX: x, imageOffsetY: y } })}
+              />
+            </>
+          )}
+
+          <Group grow gap={4}>
+            <Button
+              variant="light"
+              color="orange"
+              size="xs"
+              leftSection={<IconUpload size={12} />}
+              onClick={() => bgFileRef.current?.click()}
+            >
+              Replace
+            </Button>
+            <Button
+              variant="light"
+              color="red"
+              size="xs"
+              leftSection={<IconTrash size={12} />}
+              onClick={() => onUpdateScene(scene.id, { background: { imageSrc: undefined, imageFit: undefined, imageOffsetX: undefined, imageOffsetY: undefined, imageScale: undefined } })}
+            >
+              Remove
+            </Button>
+          </Group>
+        </Stack>
+      ) : (
+        <Button
+          fullWidth
+          variant="light"
+          color="orange"
+          size="sm"
+          leftSection={<IconUpload size={14} />}
+          onClick={() => bgFileRef.current?.click()}
+        >
+          Upload Background
+        </Button>
+      )}
+
+      {/* ── Opacity ── */}
+      <Divider color="rgba(0,0,0,0.08)" />
+      <InspectorField
+        label="Opacity"
+        input={
+          <Slider
+            min={0}
+            max={1}
+            step={0.01}
+            value={bg.opacity ?? 1}
+            onChange={(v) => onUpdateScene(scene.id, { background: { opacity: v } })}
+            label={(v) => `${Math.round(v * 100)}%`}
+            size="xs"
+            color="orange"
           />
         }
       />

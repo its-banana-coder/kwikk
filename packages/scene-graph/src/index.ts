@@ -7,6 +7,7 @@ import type {
   ManualOverrides,
   ProjectDocument,
   Scene,
+  SceneBackground,
   StyleProps,
   TextSpan,
   TimelineTrack,
@@ -232,7 +233,7 @@ export type EditorOperation =
   | { operation: "add_scene"; scene: Scene }
   | { operation: "delete_scene"; sceneId: string }
   | { operation: "reorder_scenes"; fromIndex: number; toIndex: number }
-  | { operation: "update_scene"; sceneId: string; patch: { name?: string; backgroundColor?: string } }
+  | { operation: "update_scene"; sceneId: string; patch: { name?: string; backgroundColor?: string; background?: Partial<SceneBackground> } }
   | { operation: "update_scene_duration"; sceneId: string; durationMs: number }
   | { operation: "set_brand_theme"; brandTheme: string | undefined };
 
@@ -325,7 +326,15 @@ export function applyOperation(project: ProjectDocument, op: EditorOperation): P
     case "update_scene":
       return {
         ...project,
-        scenes: project.scenes.map((s) => (s.id !== op.sceneId ? s : { ...s, ...op.patch }))
+        scenes: project.scenes.map((s) => {
+          if (s.id !== op.sceneId) return s;
+          const { background: bgPatch, ...rest } = op.patch;
+          const merged = { ...s, ...rest };
+          if (bgPatch) {
+            merged.background = { ...s.background, ...bgPatch };
+          }
+          return merged;
+        })
       };
 
     case "update_scene_duration":

@@ -80,12 +80,27 @@ export type ElementNode = {
   content?: ElementContent;
 };
 
+export type ImageFitMode = "stretch" | "cover" | "contain" | "custom";
+
+export interface SceneBackground {
+  color?: string;
+  color2?: string;
+  gradientAngle?: number;
+  imageSrc?: string;
+  imageFit?: ImageFitMode;
+  imageOffsetX?: number;
+  imageOffsetY?: number;
+  imageScale?: number;
+  opacity?: number;
+}
+
 export type Scene = {
   id: string;
   name: string;
   durationMs: number;
   elements: ElementNode[];
   backgroundColor?: string;
+  background?: SceneBackground;
 };
 
 export type TimelineTrack = {
