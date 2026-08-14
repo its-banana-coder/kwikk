@@ -106,6 +106,22 @@ pnpm exec tsx scripts/add-font.ts --id ... --family ... --category ... --weights
 # or scripts/bulk-import-fonts.ts / scripts/seed-disk-fonts.ts for local font files
 ```
 
+None of these catalogs ship with bundled assets (fonts, icons, images) for
+license reasons — you point the seed scripts at a source yourself. Some
+open-license options that work well:
+
+- **Fonts** — [google/fonts](https://github.com/google/fonts) (~1,900+
+  OFL/Apache-licensed families, `git clone`-able) pairs with
+  `scripts/seed-disk-fonts.ts` / `scripts/bulk-import-fonts.ts` above.
+- **Icons** — [phosphor-icons/core](https://github.com/phosphor-icons/core)
+  (what `seed-icons.ts` expects out of the box), or similarly-shaped MIT sets
+  like [lucide-icons/lucide](https://github.com/lucide-icons/lucide) and
+  [tabler/tabler-icons](https://github.com/tabler/tabler-icons).
+- **Stock photos/videos/backgrounds** — `seed-backgrounds.ts` already talks
+  to the [Pixabay API](https://pixabay.com/api/docs/) (free key); the same
+  `add_asset` / `add_project_asset` MCP tools work with anything you fetch
+  from other CC0/free-for-commercial-use APIs (Pexels, Unsplash, etc.).
+
 ## Model Context Protocol server
 
 `apps/mcp` is a thin MCP server (stdio transport) that exposes kwikk to any
