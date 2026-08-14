@@ -1,0 +1,39 @@
+{
+  "name": "kwikk",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.10.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev:api": "pnpm --filter @kwikk/api dev",
+    "dev:editor": "pnpm --filter @kwikk/editor dev",
+    "dev:renderer": "pnpm --filter @kwikk/renderer dev",
+    "build:mcp": "pnpm --filter @kwikk/mcp build",
+    "mcp:install": "pnpm build:mcp && claude mcp add kwikk -e KWIKK_API_URL=http://localhost:8080 -- node \"$(pwd)/apps/mcp/dist/index.js\"",
+    "seed:inspiration": "tsx scripts/seed-inspiration-library.ts",
+    "seed:templates": "pnpm --filter @kwikk/api exec tsx src/scripts/seed-templates.ts",
+    "seed:backgrounds": "pnpm --filter @kwikk/api exec tsx src/scripts/seed-css-backgrounds.ts",
+    "seed:basics": "pnpm seed:inspiration && pnpm seed:templates && pnpm seed:backgrounds",
+    "seed:assets": "tsx scripts/ingest-assets.ts",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r --if-present test"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "onnxruntime-node"
+    ]
+  },
+  "dependencies": {
+    "@tailwindcss/oxide-linux-x64-gnu": "^4.3.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.1",
+    "dotenv": "^16.5.0",
+    "pg": "^8.13.3"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "@kwikk/render-core",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@kwikk/animation-engine": "workspace:*",
+    "@kwikk/shared-types": "workspace:*",
+    "@kwikk/timeline": "workspace:*",
+    "mp4-muxer": "^5.2.2",
+    "pixi-filters": "^6.0.0",
+    "pixi.js": "^8.2.6"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "happy-dom": "^20.9.0",
+    "jsdom": "^29.1.1",
+    "vitest": "^1.0.0"
+  }
+}

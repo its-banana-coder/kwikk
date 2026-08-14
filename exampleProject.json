@@ -1,0 +1,2631 @@
+{
+    "id": "proj_1779900701236",
+    "name": "10 Evidence-Based Ways to Reverse or Manage Type 2 Diabetes",
+    "assets": [],
+    "scenes": [
+        {
+            "id": "scene_hook",
+            "name": "Hook: The Reversible Truth",
+            "elements": [
+                {
+                    "id": "el_bg_glow",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "opacity": 0.08,
+                        "blendMode": "screen",
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 200,
+                        "y": 200,
+                        "scale": 1,
+                        "width": 600,
+                        "height": 600,
+                        "zIndex": 1,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "circle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_bg_glow_fadeIn_0",
+                            "type": "fadeIn",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 600
+                        },
+                        {
+                            "id": "el_bg_glow_cinematic_breathe_1",
+                            "type": "cinematic_breathe",
+                            "speed": 0.4,
+                            "startMs": 600,
+                            "amplitude": 0.03,
+                            "durationMs": 99999
+                        }
+                    ],
+                    "semanticRole": "scene_backdrop",
+                    "semanticLayer": "atmospheric"
+                },
+                {
+                    "id": "el_accent_bar",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 480,
+                        "y": 780,
+                        "scale": 1,
+                        "width": 120,
+                        "height": 4,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "rectangle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_accent_bar_draw_in_0",
+                            "type": "draw_in",
+                            "easing": "easeOut",
+                            "startMs": 200,
+                            "durationMs": 400
+                        }
+                    ],
+                    "semanticRole": "divider",
+                    "semanticLayer": "secondary_motion"
+                },
+                {
+                    "id": "el_hook_title",
+                    "type": "text",
+                    "style": {
+                        "color": "#111111",
+                        "fontSize": 104,
+                        "textAlign": "center",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 700,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.1,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 2
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 850,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 320,
+                        "zIndex": 5,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Type 2 Diabetes Is Reversible"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_hook_title_slideUp_0",
+                            "type": "slideUp",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 500,
+                            "fromOffset": 40
+                        }
+                    ],
+                    "semanticRole": "hook_title",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_hook_subtitle",
+                    "type": "text",
+                    "style": {
+                        "color": "#404040",
+                        "fontSize": 48,
+                        "textAlign": "center",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 500,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 1220,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 180,
+                        "zIndex": 5,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Early intervention can restore normal blood sugar without medication."
+                    },
+                    "animations": [
+                        {
+                            "id": "el_hook_subtitle_fadeIn_0",
+                            "type": "fadeIn",
+                            "easing": "easeOut",
+                            "startMs": 300,
+                            "durationMs": 450
+                        }
+                    ],
+                    "semanticRole": "hook_subtitle",
+                    "semanticLayer": "typography"
+                }
+            ],
+            "background": {
+                "color": "#f7eaff",
+                "color2": "#fde2ea",
+                "imageFit": "stretch",
+                "gradientAngle": 145
+            },
+            "durationMs": 4000
+        },
+        {
+            "id": "scene_item_1",
+            "name": "Low-Glycemic Index Eating",
+            "elements": [
+                {
+                    "id": "el_bg_glow_1",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "opacity": 0.06,
+                        "blendMode": "screen",
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 250,
+                        "y": 300,
+                        "scale": 1,
+                        "width": 500,
+                        "height": 500,
+                        "zIndex": 1,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "circle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_bg_glow_1_fadeIn_0",
+                            "type": "fadeIn",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 600
+                        },
+                        {
+                            "id": "el_bg_glow_1_cinematic_breathe_1",
+                            "type": "cinematic_breathe",
+                            "speed": 0.4,
+                            "startMs": 600,
+                            "amplitude": 0.03,
+                            "durationMs": 99999
+                        }
+                    ],
+                    "semanticRole": "scene_backdrop",
+                    "semanticLayer": "atmospheric"
+                },
+                {
+                    "id": "el_accent_bar_1",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 420,
+                        "y": 780,
+                        "scale": 1,
+                        "width": 240,
+                        "height": 6,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "rectangle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_accent_bar_1_draw_in_0",
+                            "type": "draw_in",
+                            "easing": "easeOut",
+                            "startMs": 150,
+                            "durationMs": 400
+                        }
+                    ],
+                    "semanticRole": "divider",
+                    "semanticLayer": "secondary_motion"
+                },
+                {
+                    "id": "el_hero_phrase_1",
+                    "type": "text",
+                    "style": {
+                        "color": "#111111",
+                        "fontSize": 96,
+                        "textAlign": "center",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 700,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.1,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 2
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 850,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 280,
+                        "zIndex": 5,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Low-GI Foods Stabilize Blood Sugar"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_hero_phrase_1_slideUp_0",
+                            "type": "slideUp",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 450,
+                            "fromOffset": 40
+                        }
+                    ],
+                    "semanticRole": "hero_phrase",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_body_copy_1",
+                    "type": "text",
+                    "style": {
+                        "color": "#404040",
+                        "fontSize": 44,
+                        "textAlign": "center",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 500,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 1200,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 180,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Beans, leafy greens, whole grains slow glucose absorption, reduce insulin demand."
+                    },
+                    "animations": [
+                        {
+                            "id": "el_body_copy_1_fadeIn_0",
+                            "type": "fadeIn",
+                            "easing": "easeOut",
+                            "startMs": 300,
+                            "durationMs": 450
+                        }
+                    ],
+                    "semanticRole": "body_copy",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_supporting_1",
+                    "type": "text",
+                    "style": {
+                        "color": "#F97316",
+                        "fontSize": 42,
+                        "textAlign": "center",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 600,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 1500,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 120,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "GI score below 55 = sustained energy"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_supporting_1_pop_in_0",
+                            "type": "pop_in",
+                            "easing": "easeOut",
+                            "startMs": 2200,
+                            "durationMs": 350
+                        }
+                    ],
+                    "semanticRole": "supporting_caption",
+                    "semanticLayer": "typography"
+                }
+            ],
+            "background": {
+                "color": "#B3E5FC",
+                "color2": "#FFF8E1",
+                "gradientAngle": 225
+            },
+            "durationMs": 5000
+        },
+        {
+            "id": "scene_item_2",
+            "name": "Intermittent Fasting",
+            "elements": [
+                {
+                    "id": "el_bg_glow_2",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "opacity": 0.06,
+                        "blendMode": "screen",
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 250,
+                        "y": 300,
+                        "scale": 1,
+                        "width": 500,
+                        "height": 500,
+                        "zIndex": 1,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "circle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_bg_glow_2_fadeIn_0",
+                            "type": "fadeIn",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 600
+                        },
+                        {
+                            "id": "el_bg_glow_2_cinematic_breathe_1",
+                            "type": "cinematic_breathe",
+                            "speed": 0.4,
+                            "startMs": 600,
+                            "amplitude": 0.03,
+                            "durationMs": 99999
+                        }
+                    ],
+                    "semanticRole": "scene_backdrop",
+                    "semanticLayer": "atmospheric"
+                },
+                {
+                    "id": "el_accent_bar_2",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 380,
+                        "y": 780,
+                        "scale": 1,
+                        "width": 320,
+                        "height": 6,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "rectangle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_accent_bar_2_draw_in_0",
+                            "type": "draw_in",
+                            "easing": "easeOut",
+                            "startMs": 150,
+                            "durationMs": 400
+                        }
+                    ],
+                    "semanticRole": "divider",
+                    "semanticLayer": "secondary_motion"
+                },
+                {
+                    "id": "el_hero_phrase_2",
+                    "type": "text",
+                    "style": {
+                        "color": "#111111",
+                        "fontSize": 96,
+                        "textAlign": "center",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 700,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.1,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 2
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 850,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 300,
+                        "zIndex": 5,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Intermittent Fasting Drops Insulin 40%"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_hero_phrase_2_slideUp_0",
+                            "type": "slideUp",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 450,
+                            "fromOffset": 40
+                        }
+                    ],
+                    "semanticRole": "hero_phrase",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_body_copy_2",
+                    "type": "text",
+                    "style": {
+                        "color": "#404040",
+                        "fontSize": 44,
+                        "textAlign": "center",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 500,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 1200,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 180,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Extended fasting windows let pancreas recover, improve insulin sensitivity naturally."
+                    },
+                    "animations": [
+                        {
+                            "id": "el_body_copy_2_fadeIn_0",
+                            "type": "fadeIn",
+                            "easing": "easeOut",
+                            "startMs": 300,
+                            "durationMs": 450
+                        }
+                    ],
+                    "semanticRole": "body_copy",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_stat_counter_2",
+                    "type": "text",
+                    "style": {
+                        "color": "#F97316",
+                        "fontSize": 42,
+                        "textAlign": "center",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 600,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 1500,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 120,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "16:8 fasting (16 hrs fast, 8 hrs eat window)"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_stat_counter_2_pop_in_0",
+                            "type": "pop_in",
+                            "easing": "easeOut",
+                            "startMs": 2200,
+                            "durationMs": 350
+                        }
+                    ],
+                    "semanticRole": "supporting_caption",
+                    "semanticLayer": "typography"
+                }
+            ],
+            "background": {
+                "color": "#B3E5FC",
+                "color2": "#FFF8E1",
+                "gradientAngle": 225
+            },
+            "durationMs": 5000
+        },
+        {
+            "id": "scene_item_3",
+            "name": "Resistance Training 3x Weekly",
+            "elements": [
+                {
+                    "id": "el_bg_glow_3",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "opacity": 0.06,
+                        "blendMode": "screen",
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 250,
+                        "y": 300,
+                        "scale": 1,
+                        "width": 500,
+                        "height": 500,
+                        "zIndex": 1,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "circle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_bg_glow_3_fadeIn_0",
+                            "type": "fadeIn",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 600
+                        },
+                        {
+                            "id": "el_bg_glow_3_cinematic_breathe_1",
+                            "type": "cinematic_breathe",
+                            "speed": 0.4,
+                            "startMs": 600,
+                            "amplitude": 0.03,
+                            "durationMs": 99999
+                        }
+                    ],
+                    "semanticRole": "scene_backdrop",
+                    "semanticLayer": "atmospheric"
+                },
+                {
+                    "id": "el_accent_bar_3",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 340,
+                        "y": 780,
+                        "scale": 1,
+                        "width": 400,
+                        "height": 6,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "rectangle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_accent_bar_3_draw_in_0",
+                            "type": "draw_in",
+                            "easing": "easeOut",
+                            "startMs": 150,
+                            "durationMs": 400
+                        }
+                    ],
+                    "semanticRole": "divider",
+                    "semanticLayer": "secondary_motion"
+                },
+                {
+                    "id": "el_hero_phrase_3",
+                    "type": "text",
+                    "style": {
+                        "color": "#111111",
+                        "fontSize": 96,
+                        "textAlign": "center",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 700,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.1,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 2
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 850,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 310,
+                        "zIndex": 5,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Resistance Training Uses Glucose Immediately"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_hero_phrase_3_slideUp_0",
+                            "type": "slideUp",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 450,
+                            "fromOffset": 40
+                        }
+                    ],
+                    "semanticRole": "hero_phrase",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_body_copy_3",
+                    "type": "text",
+                    "style": {
+                        "color": "#404040",
+                        "fontSize": 44,
+                        "textAlign": "center",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 500,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 1210,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 150,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Muscles act as glucose sinks; 3x weekly builds insulin sensitivity fast."
+                    },
+                    "animations": [
+                        {
+                            "id": "el_body_copy_3_fadeIn_0",
+                            "type": "fadeIn",
+                            "easing": "easeOut",
+                            "startMs": 300,
+                            "durationMs": 450
+                        }
+                    ],
+                    "semanticRole": "body_copy",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_supporting_3",
+                    "type": "text",
+                    "style": {
+                        "color": "#F97316",
+                        "fontSize": 42,
+                        "textAlign": "center",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 600,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 1500,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 120,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "20\u201330 mins per session, Mon/Wed/Fri"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_supporting_3_pop_in_0",
+                            "type": "pop_in",
+                            "easing": "easeOut",
+                            "startMs": 2200,
+                            "durationMs": 350
+                        }
+                    ],
+                    "semanticRole": "supporting_caption",
+                    "semanticLayer": "typography"
+                }
+            ],
+            "background": {
+                "color": "#f7eaff",
+                "color2": "#fde2ea",
+                "gradientAngle": 135
+            },
+            "durationMs": 5000
+        },
+        {
+            "id": "scene_item_4",
+            "name": "5-10% Weight Loss Reverses Diabetes",
+            "elements": [
+                {
+                    "id": "el_bg_glow_4",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "opacity": 0.08,
+                        "blendMode": "screen",
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 540,
+                        "y": 960,
+                        "scale": 1,
+                        "width": 800,
+                        "height": 800,
+                        "zIndex": 1,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "circle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_bg_glow_fadeIn_0",
+                            "type": "fadeIn",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 600
+                        }
+                    ],
+                    "semanticRole": "scene_backdrop",
+                    "semanticLayer": "atmospheric"
+                },
+                {
+                    "id": "el_accent_bar_4",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 420,
+                        "y": 380,
+                        "scale": 1,
+                        "width": 240,
+                        "height": 6,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "rectangle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_accent_bar_draw_in_0",
+                            "type": "draw_in",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 500
+                        }
+                    ],
+                    "semanticRole": "divider",
+                    "semanticLayer": "secondary_motion"
+                },
+                {
+                    "id": "el_hero_title",
+                    "type": "text",
+                    "style": {
+                        "color": "#1A1A1A",
+                        "fontSize": 100,
+                        "textAlign": "left",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 700,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 440,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 280,
+                        "zIndex": 5,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "5-10% Weight Loss Reverses Diabetes"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_hero_title_slideLeft_0",
+                            "type": "slideLeft",
+                            "easing": "easeOut",
+                            "startMs": 100,
+                            "durationMs": 450,
+                            "fromOffset": 60
+                        }
+                    ],
+                    "semanticRole": "hero_phrase",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_body_copy",
+                    "type": "text",
+                    "style": {
+                        "color": "#4B5563",
+                        "fontSize": 44,
+                        "textAlign": "left",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 400,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 800,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 180,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Modest reduction dramatically improves insulin sensitivity; early cases achieve remission."
+                    },
+                    "animations": [
+                        {
+                            "id": "el_body_copy_slideLeft_0",
+                            "type": "slideLeft",
+                            "easing": "easeOut",
+                            "startMs": 300,
+                            "durationMs": 450,
+                            "fromOffset": 60
+                        }
+                    ],
+                    "semanticRole": "body_copy",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_stat_badge",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "opacity": 0.1,
+                        "fillColor": "#F97316",
+                        "borderRadius": 16
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 1320,
+                        "scale": 1,
+                        "width": 320,
+                        "height": 120,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "rectangle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_stat_badge_slideLeft_0",
+                            "type": "slideLeft",
+                            "easing": "easeOut",
+                            "startMs": 2200,
+                            "durationMs": 400,
+                            "fromOffset": 80
+                        }
+                    ],
+                    "semanticRole": "supporting_caption",
+                    "semanticLayer": "secondary_motion"
+                },
+                {
+                    "id": "el_stat_text",
+                    "type": "text",
+                    "style": {
+                        "color": "#F97316",
+                        "fontSize": 42,
+                        "fontFamily": "Poppins",
+                        "fontWeight": 600,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 112,
+                        "y": 1340,
+                        "scale": 1,
+                        "width": 280,
+                        "height": 80,
+                        "zIndex": 7,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Remission in 46% of cases"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_stat_text_slideLeft_0",
+                            "type": "slideLeft",
+                            "easing": "easeOut",
+                            "startMs": 2300,
+                            "durationMs": 400,
+                            "fromOffset": 80
+                        }
+                    ],
+                    "semanticRole": "supporting_caption",
+                    "semanticLayer": "typography"
+                }
+            ],
+            "background": {
+                "color": "#B3E5FC",
+                "color2": "#FFF8E1",
+                "gradientAngle": 225
+            },
+            "durationMs": 5000
+        },
+        {
+            "id": "scene_item_5",
+            "name": "10 Minutes Meditation Lowers Cortisol",
+            "elements": [
+                {
+                    "id": "el_bg_glow_5",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "opacity": 0.08,
+                        "blendMode": "screen",
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 540,
+                        "y": 960,
+                        "scale": 1,
+                        "width": 800,
+                        "height": 800,
+                        "zIndex": 1,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "circle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_bg_glow_5_fadeIn_0",
+                            "type": "fadeIn",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 600
+                        }
+                    ],
+                    "semanticRole": "scene_backdrop",
+                    "semanticLayer": "atmospheric"
+                },
+                {
+                    "id": "el_accent_bar_5",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 420,
+                        "y": 380,
+                        "scale": 1,
+                        "width": 240,
+                        "height": 6,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "rectangle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_accent_bar_5_draw_in_0",
+                            "type": "draw_in",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 500
+                        }
+                    ],
+                    "semanticRole": "divider",
+                    "semanticLayer": "secondary_motion"
+                },
+                {
+                    "id": "el_hero_title_5",
+                    "type": "text",
+                    "style": {
+                        "color": "#1A1A1A",
+                        "fontSize": 96,
+                        "textAlign": "left",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 700,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 440,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 280,
+                        "zIndex": 5,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "10 Minutes Meditation Lowers Cortisol"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_hero_title_5_slideRight_0",
+                            "type": "slideRight",
+                            "easing": "easeOut",
+                            "startMs": 100,
+                            "durationMs": 450,
+                            "fromOffset": 60
+                        }
+                    ],
+                    "semanticRole": "hero_phrase",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_body_copy_5",
+                    "type": "text",
+                    "style": {
+                        "color": "#4B5563",
+                        "fontSize": 44,
+                        "textAlign": "left",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 400,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 800,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 180,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Chronic stress raises glucose; daily breathwork reverses this metabolic pathway."
+                    },
+                    "animations": [
+                        {
+                            "id": "el_body_copy_5_slideRight_0",
+                            "type": "slideRight",
+                            "easing": "easeOut",
+                            "startMs": 300,
+                            "durationMs": 450,
+                            "fromOffset": 60
+                        }
+                    ],
+                    "semanticRole": "body_copy",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_cortisol_counter",
+                    "type": "text",
+                    "style": {
+                        "color": "#F97316",
+                        "fontSize": 56,
+                        "fontFamily": "Poppins",
+                        "fontWeight": 700,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 1320,
+                        "scale": 1,
+                        "width": 250,
+                        "height": 100,
+                        "zIndex": 7,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "25% cortisol drop"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_cortisol_counter_slideRight_0",
+                            "type": "slideRight",
+                            "easing": "easeOut",
+                            "startMs": 2200,
+                            "durationMs": 400,
+                            "fromOffset": 80
+                        }
+                    ],
+                    "semanticRole": "supporting_caption",
+                    "semanticLayer": "typography"
+                }
+            ],
+            "background": {
+                "color": "#B3E5FC",
+                "color2": "#FFF8E1",
+                "gradientAngle": 225
+            },
+            "durationMs": 5000
+        },
+        {
+            "id": "scene_item_6",
+            "name": "7-9 Hours Sleep Equals Medication",
+            "elements": [
+                {
+                    "id": "el_bg_glow_6",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "opacity": 0.08,
+                        "blendMode": "screen",
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 540,
+                        "y": 960,
+                        "scale": 1,
+                        "width": 800,
+                        "height": 800,
+                        "zIndex": 1,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "circle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_bg_glow_6_fadeIn_0",
+                            "type": "fadeIn",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 600
+                        }
+                    ],
+                    "semanticRole": "scene_backdrop",
+                    "semanticLayer": "atmospheric"
+                },
+                {
+                    "id": "el_accent_bar_6",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 420,
+                        "y": 380,
+                        "scale": 1,
+                        "width": 240,
+                        "height": 6,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "rectangle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_accent_bar_6_draw_in_0",
+                            "type": "draw_in",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 500
+                        }
+                    ],
+                    "semanticRole": "divider",
+                    "semanticLayer": "secondary_motion"
+                },
+                {
+                    "id": "el_hero_title_6",
+                    "type": "text",
+                    "style": {
+                        "color": "#1A1A1A",
+                        "fontSize": 100,
+                        "textAlign": "left",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 700,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 440,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 280,
+                        "zIndex": 5,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "7-9 Hours Sleep Equals Medication"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_hero_title_6_slideLeft_0",
+                            "type": "slideLeft",
+                            "easing": "easeOut",
+                            "startMs": 100,
+                            "durationMs": 450,
+                            "fromOffset": 60
+                        }
+                    ],
+                    "semanticRole": "hero_phrase",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_body_copy_6",
+                    "type": "text",
+                    "style": {
+                        "color": "#4B5563",
+                        "fontSize": 44,
+                        "textAlign": "left",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 400,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 800,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 180,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Poor sleep causes insulin resistance; quality rest regulates glucose naturally."
+                    },
+                    "animations": [
+                        {
+                            "id": "el_body_copy_6_slideLeft_0",
+                            "type": "slideLeft",
+                            "easing": "easeOut",
+                            "startMs": 300,
+                            "durationMs": 450,
+                            "fromOffset": 60
+                        }
+                    ],
+                    "semanticRole": "body_copy",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_sleep_badge",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "opacity": 0.1,
+                        "fillColor": "#F97316",
+                        "borderRadius": 16
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 1320,
+                        "scale": 1,
+                        "width": 320,
+                        "height": 120,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "rectangle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_sleep_badge_slideLeft_0",
+                            "type": "slideLeft",
+                            "easing": "easeOut",
+                            "startMs": 2200,
+                            "durationMs": 400,
+                            "fromOffset": 80
+                        }
+                    ],
+                    "semanticRole": "supporting_caption",
+                    "semanticLayer": "secondary_motion"
+                },
+                {
+                    "id": "el_sleep_text",
+                    "type": "text",
+                    "style": {
+                        "color": "#F97316",
+                        "fontSize": 42,
+                        "fontFamily": "Poppins",
+                        "fontWeight": 600,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 112,
+                        "y": 1340,
+                        "scale": 1,
+                        "width": 280,
+                        "height": 80,
+                        "zIndex": 7,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "30% better glucose control"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_sleep_text_slideLeft_0",
+                            "type": "slideLeft",
+                            "easing": "easeOut",
+                            "startMs": 2300,
+                            "durationMs": 400,
+                            "fromOffset": 80
+                        }
+                    ],
+                    "semanticRole": "supporting_caption",
+                    "semanticLayer": "typography"
+                }
+            ],
+            "background": {
+                "color": "#f7eaff",
+                "color2": "#dbeafe",
+                "gradientAngle": 135
+            },
+            "durationMs": 5000
+        },
+        {
+            "id": "scene_item_7",
+            "name": "Medication Adherence & Monitoring Drives Success",
+            "elements": [
+                {
+                    "id": "el_bg_glow_7",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "opacity": 0.08,
+                        "blendMode": "screen",
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 540,
+                        "y": 960,
+                        "scale": 1,
+                        "width": 800,
+                        "height": 800,
+                        "zIndex": 1,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "circle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_bg_glow_7_fadeIn_0",
+                            "type": "fadeIn",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 600
+                        }
+                    ],
+                    "semanticRole": "scene_backdrop",
+                    "semanticLayer": "atmospheric"
+                },
+                {
+                    "id": "el_accent_bar_7",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 420,
+                        "y": 380,
+                        "scale": 1,
+                        "width": 240,
+                        "height": 6,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "rectangle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_accent_bar_7_draw_in_0",
+                            "type": "draw_in",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 500
+                        }
+                    ],
+                    "semanticRole": "divider",
+                    "semanticLayer": "secondary_motion"
+                },
+                {
+                    "id": "el_hero_title_7",
+                    "type": "text",
+                    "style": {
+                        "color": "#1A1A1A",
+                        "fontSize": 88,
+                        "textAlign": "left",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 700,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 440,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 320,
+                        "zIndex": 5,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Medication Adherence + Tracking Drives Success"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_hero_title_7_slideRight_0",
+                            "type": "slideRight",
+                            "easing": "easeOut",
+                            "startMs": 100,
+                            "durationMs": 450,
+                            "fromOffset": 60
+                        }
+                    ],
+                    "semanticRole": "hero_phrase",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_body_copy_7",
+                    "type": "text",
+                    "style": {
+                        "color": "#4B5563",
+                        "fontSize": 44,
+                        "textAlign": "left",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 400,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 840,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 180,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Consistent monitoring catches progress, guides strategy adjustments, prevents complications."
+                    },
+                    "animations": [
+                        {
+                            "id": "el_body_copy_7_slideRight_0",
+                            "type": "slideRight",
+                            "easing": "easeOut",
+                            "startMs": 300,
+                            "durationMs": 450,
+                            "fromOffset": 60
+                        }
+                    ],
+                    "semanticRole": "body_copy",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_adherence_stat",
+                    "type": "text",
+                    "style": {
+                        "color": "#F97316",
+                        "fontSize": 56,
+                        "fontFamily": "Poppins",
+                        "fontWeight": 700,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 1320,
+                        "scale": 1,
+                        "width": 300,
+                        "height": 100,
+                        "zIndex": 7,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "92% success rate"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_adherence_stat_slideRight_0",
+                            "type": "slideRight",
+                            "easing": "easeOut",
+                            "startMs": 2200,
+                            "durationMs": 400,
+                            "fromOffset": 80
+                        }
+                    ],
+                    "semanticRole": "supporting_caption",
+                    "semanticLayer": "typography"
+                }
+            ],
+            "background": {
+                "color": "#f7eaff",
+                "color2": "#fde2ea",
+                "gradientAngle": 145
+            },
+            "durationMs": 5000
+        },
+        {
+            "id": "scene_item_8",
+            "name": "Increase Soluble Fiber Intake",
+            "overlay": {
+                "type": "bokeh",
+                "speed": 0.6,
+                "intensity": 0.12
+            },
+            "elements": [
+                {
+                    "id": "el_bg_glow_8",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "opacity": 0.08,
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 540,
+                        "y": 960,
+                        "scale": 1,
+                        "width": 600,
+                        "height": 600,
+                        "zIndex": 1,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "circle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_bg_glow_8_fadeIn_0",
+                            "type": "fadeIn",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 600
+                        }
+                    ],
+                    "semanticRole": "scene_backdrop",
+                    "semanticLayer": "atmospheric"
+                },
+                {
+                    "id": "el_accent_bar_8",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 240,
+                        "y": 580,
+                        "scale": 1,
+                        "width": 120,
+                        "height": 6,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "rectangle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_accent_bar_8_zoomIn_0",
+                            "type": "zoomIn",
+                            "easing": "easeOut",
+                            "startMs": 100,
+                            "durationMs": 450
+                        }
+                    ],
+                    "semanticRole": "divider",
+                    "semanticLayer": "secondary_motion"
+                },
+                {
+                    "id": "el_hero_title_8",
+                    "type": "text",
+                    "style": {
+                        "color": "#1a1a1a",
+                        "fontSize": 96,
+                        "textAlign": "left",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 700,
+                        "textShadow": {
+                            "blur": 12,
+                            "alpha": 0.08,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 2
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 620,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 320,
+                        "zIndex": 5,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Soluble Fiber Flattens Blood Sugar Spikes"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_hero_title_8_zoomIn_0",
+                            "type": "zoomIn",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 500
+                        }
+                    ],
+                    "semanticRole": "hero_phrase",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_body_copy_8",
+                    "type": "text",
+                    "style": {
+                        "color": "#1a1a1a",
+                        "fontSize": 44,
+                        "textAlign": "left",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 400,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 1020,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 180,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Oats, apples, legumes slow digestion; naturally prevents glucose dysregulation."
+                    },
+                    "animations": [
+                        {
+                            "id": "el_body_copy_8_slideLeft_0",
+                            "type": "slideLeft",
+                            "easing": "easeOut",
+                            "startMs": 300,
+                            "durationMs": 450
+                        }
+                    ],
+                    "semanticRole": "body_copy",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_supporting_stat_8",
+                    "type": "text",
+                    "style": {
+                        "color": "#F97316",
+                        "fontSize": 40,
+                        "textAlign": "left",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 500,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 1280,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 100,
+                        "zIndex": 7,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Soluble fiber reduces post-meal glucose by up to 40%"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_supporting_stat_8_zoomIn_0",
+                            "type": "zoomIn",
+                            "easing": "easeOut",
+                            "startMs": 2000,
+                            "durationMs": 400
+                        }
+                    ],
+                    "semanticRole": "supporting_caption",
+                    "semanticLayer": "depth"
+                }
+            ],
+            "background": {
+                "color": "#f8fafc",
+                "color2": "#a5b4fc",
+                "gradientAngle": 135
+            },
+            "durationMs": 5000
+        },
+        {
+            "id": "scene_item_9",
+            "name": "Walk After Meals",
+            "overlay": {
+                "type": "bokeh",
+                "speed": 0.6,
+                "intensity": 0.12
+            },
+            "elements": [
+                {
+                    "id": "el_bg_glow_9",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "opacity": 0.08,
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 540,
+                        "y": 960,
+                        "scale": 1,
+                        "width": 600,
+                        "height": 600,
+                        "zIndex": 1,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "circle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_bg_glow_9_fadeIn_0",
+                            "type": "fadeIn",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 600
+                        }
+                    ],
+                    "semanticRole": "scene_backdrop",
+                    "semanticLayer": "atmospheric"
+                },
+                {
+                    "id": "el_accent_bar_9",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 240,
+                        "y": 580,
+                        "scale": 1,
+                        "width": 120,
+                        "height": 6,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "rectangle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_accent_bar_9_zoomIn_0",
+                            "type": "zoomIn",
+                            "easing": "easeOut",
+                            "startMs": 100,
+                            "durationMs": 450
+                        }
+                    ],
+                    "semanticRole": "divider",
+                    "semanticLayer": "secondary_motion"
+                },
+                {
+                    "id": "el_hero_title_9",
+                    "type": "text",
+                    "style": {
+                        "color": "#1a1a1a",
+                        "fontSize": 96,
+                        "textAlign": "left",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 700,
+                        "textShadow": {
+                            "blur": 12,
+                            "alpha": 0.08,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 2
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 620,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 320,
+                        "zIndex": 5,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "3-Minute Post-Meal Walks Cut Spikes 30%"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_hero_title_9_zoomIn_0",
+                            "type": "zoomIn",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 500
+                        }
+                    ],
+                    "semanticRole": "hero_phrase",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_body_copy_9",
+                    "type": "text",
+                    "style": {
+                        "color": "#1a1a1a",
+                        "fontSize": 44,
+                        "textAlign": "left",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 400,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 1020,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 180,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Immediate movement after eating is one simplest, most effective intervention."
+                    },
+                    "animations": [
+                        {
+                            "id": "el_body_copy_9_slideLeft_0",
+                            "type": "slideLeft",
+                            "easing": "easeOut",
+                            "startMs": 300,
+                            "durationMs": 450
+                        }
+                    ],
+                    "semanticRole": "body_copy",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_supporting_stat_9",
+                    "type": "text",
+                    "style": {
+                        "color": "#F97316",
+                        "fontSize": 40,
+                        "textAlign": "left",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 500,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 1280,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 100,
+                        "zIndex": 7,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Walking within 2-3 minutes of eating activates glucose uptake"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_supporting_stat_9_zoomIn_0",
+                            "type": "zoomIn",
+                            "easing": "easeOut",
+                            "startMs": 2000,
+                            "durationMs": 400
+                        }
+                    ],
+                    "semanticRole": "supporting_caption",
+                    "semanticLayer": "depth"
+                }
+            ],
+            "background": {
+                "color": "#ffffff",
+                "color2": "#fce7f3",
+                "gradientAngle": 180
+            },
+            "durationMs": 5000
+        },
+        {
+            "id": "scene_item_10",
+            "name": "Regular Health Check-ins & Accountability",
+            "overlay": {
+                "type": "bokeh",
+                "speed": 0.6,
+                "intensity": 0.12
+            },
+            "elements": [
+                {
+                    "id": "el_bg_glow_10",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "opacity": 0.08,
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 540,
+                        "y": 960,
+                        "scale": 1,
+                        "width": 600,
+                        "height": 600,
+                        "zIndex": 1,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "circle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_bg_glow_10_fadeIn_0",
+                            "type": "fadeIn",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 600
+                        }
+                    ],
+                    "semanticRole": "scene_backdrop",
+                    "semanticLayer": "atmospheric"
+                },
+                {
+                    "id": "el_accent_bar_10",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#F97316",
+                        "fillColor": "#F97316"
+                    },
+                    "layout": {
+                        "x": 240,
+                        "y": 580,
+                        "scale": 1,
+                        "width": 120,
+                        "height": 6,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "rectangle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_accent_bar_10_zoomIn_0",
+                            "type": "zoomIn",
+                            "easing": "easeOut",
+                            "startMs": 100,
+                            "durationMs": 450
+                        }
+                    ],
+                    "semanticRole": "divider",
+                    "semanticLayer": "secondary_motion"
+                },
+                {
+                    "id": "el_hero_title_10",
+                    "type": "text",
+                    "style": {
+                        "color": "#1a1a1a",
+                        "fontSize": 96,
+                        "textAlign": "left",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 700,
+                        "textShadow": {
+                            "blur": 12,
+                            "alpha": 0.08,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 2
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 620,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 320,
+                        "zIndex": 5,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Accountability Partners Triple Success Rates"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_hero_title_10_zoomIn_0",
+                            "type": "zoomIn",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 500
+                        }
+                    ],
+                    "semanticRole": "hero_phrase",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_body_copy_10",
+                    "type": "text",
+                    "style": {
+                        "color": "#1a1a1a",
+                        "fontSize": 44,
+                        "textAlign": "left",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 400,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 1020,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 180,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Doctors, dietitians, support groups transform isolated effort into guided transformation."
+                    },
+                    "animations": [
+                        {
+                            "id": "el_body_copy_10_slideLeft_0",
+                            "type": "slideLeft",
+                            "easing": "easeOut",
+                            "startMs": 300,
+                            "durationMs": 450
+                        }
+                    ],
+                    "semanticRole": "body_copy",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_supporting_stat_10",
+                    "type": "text",
+                    "style": {
+                        "color": "#F97316",
+                        "fontSize": 40,
+                        "textAlign": "left",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 500,
+                        "textShadow": {
+                            "blur": 8,
+                            "alpha": 0.3,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 1
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 1280,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 100,
+                        "zIndex": 7,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Regular monitoring increases medication adherence by 70%"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_supporting_stat_10_zoomIn_0",
+                            "type": "zoomIn",
+                            "easing": "easeOut",
+                            "startMs": 2000,
+                            "durationMs": 400
+                        }
+                    ],
+                    "semanticRole": "supporting_caption",
+                    "semanticLayer": "depth"
+                }
+            ],
+            "background": {
+                "color": "#d5c5ff",
+                "color2": "#a7f3d0",
+                "gradientAngle": 120
+            },
+            "durationMs": 5000
+        },
+        {
+            "id": "scene_cta",
+            "name": "Call to Action: Start Today",
+            "elements": [
+                {
+                    "id": "el_bg_glow_cta",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#FFFFFF",
+                        "opacity": 0.06,
+                        "fillColor": "#FFFFFF"
+                    },
+                    "layout": {
+                        "x": 540,
+                        "y": 960,
+                        "scale": 1,
+                        "width": 700,
+                        "height": 700,
+                        "zIndex": 1,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "circle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_bg_glow_cta_fadeIn_0",
+                            "type": "fadeIn",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 600
+                        }
+                    ],
+                    "semanticRole": "scene_backdrop",
+                    "semanticLayer": "atmospheric"
+                },
+                {
+                    "id": "el_hero_title_cta",
+                    "type": "text",
+                    "style": {
+                        "color": "#FFFFFF",
+                        "fontSize": 88,
+                        "textAlign": "center",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 900,
+                        "textShadow": {
+                            "blur": 16,
+                            "alpha": 0.25,
+                            "color": "#000000",
+                            "offsetX": 0,
+                            "offsetY": 3
+                        }
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 680,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 300,
+                        "zIndex": 5,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Pick One Strategy. Start Today."
+                    },
+                    "animations": [
+                        {
+                            "id": "el_hero_title_cta_zoomIn_0",
+                            "type": "zoomIn",
+                            "easing": "easeOut",
+                            "startMs": 0,
+                            "durationMs": 450
+                        }
+                    ],
+                    "semanticRole": "hero_phrase",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_body_copy_cta",
+                    "type": "text",
+                    "style": {
+                        "color": "#FFFFFF",
+                        "fontSize": 44,
+                        "textAlign": "center",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 400
+                    },
+                    "layout": {
+                        "x": 92,
+                        "y": 1100,
+                        "scale": 1,
+                        "width": 896,
+                        "height": 160,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "You are the architect of your health recovery; momentum builds from one action."
+                    },
+                    "animations": [
+                        {
+                            "id": "el_body_copy_cta_slideLeft_0",
+                            "type": "slideLeft",
+                            "easing": "easeOut",
+                            "startMs": 200,
+                            "durationMs": 450
+                        }
+                    ],
+                    "semanticRole": "body_copy",
+                    "semanticLayer": "typography"
+                },
+                {
+                    "id": "el_cta_button",
+                    "type": "shape",
+                    "style": {
+                        "fill": "#FFFFFF",
+                        "fillColor": "#FFFFFF",
+                        "borderRadius": 48
+                    },
+                    "layout": {
+                        "x": 200,
+                        "y": 1400,
+                        "scale": 1,
+                        "width": 680,
+                        "height": 140,
+                        "zIndex": 6,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "shape": "rectangle"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_cta_button_zoomIn_0",
+                            "type": "zoomIn",
+                            "easing": "easeOut",
+                            "startMs": 400,
+                            "durationMs": 400
+                        }
+                    ],
+                    "semanticRole": "cta_button",
+                    "semanticLayer": "secondary_motion"
+                },
+                {
+                    "id": "el_cta_label",
+                    "type": "text",
+                    "style": {
+                        "color": "#1A1A1A",
+                        "display": "flex",
+                        "fontSize": 56,
+                        "textAlign": "center",
+                        "alignItems": "center",
+                        "fontFamily": "Poppins",
+                        "fontWeight": 700,
+                        "justifyContent": "center"
+                    },
+                    "layout": {
+                        "x": 200,
+                        "y": 1400,
+                        "scale": 1,
+                        "width": 680,
+                        "height": 140,
+                        "zIndex": 7,
+                        "opacity": 1,
+                        "rotation": 0
+                    },
+                    "content": {
+                        "text": "Start Your Journey"
+                    },
+                    "animations": [
+                        {
+                            "id": "el_cta_label_slideLeft_0",
+                            "type": "slideLeft",
+                            "easing": "easeOut",
+                            "startMs": 450,
+                            "durationMs": 350
+                        }
+                    ],
+                    "semanticRole": "cta_label",
+                    "semanticLayer": "typography"
+                }
+            ],
+            "background": {
+                "color": "#F97316",
+                "color2": "#EA580C",
+                "gradientAngle": 135
+            },
+            "durationMs": 3500
+        }
+    ],
+    "viewport": {
+        "width": 1080,
+        "height": 1920
+    },
+    "brandTheme": {
+        "logo_url": "",
+        "body_font": "Geist",
+        "brand_name": "",
+        "font_family": "modern",
+        "accent_color": "#FAFAFA",
+        "motion_style": "dynamic",
+        "headline_font": "Space Grotesk",
+        "primary_color": "#F59E0B",
+        "subtitle_style": "minimal",
+        "secondary_color": "#18181B"
+    },
+    "timelineTracks": [
+        {
+            "id": "track_scene_hook",
+            "layer": 0,
+            "sceneId": "scene_hook",
+            "startMs": 0,
+            "durationMs": 4000
+        },
+        {
+            "id": "track_scene_item_1",
+            "layer": 0,
+            "sceneId": "scene_item_1",
+            "startMs": 4000,
+            "durationMs": 5000
+        },
+        {
+            "id": "track_scene_item_2",
+            "layer": 0,
+            "sceneId": "scene_item_2",
+            "startMs": 9000,
+            "durationMs": 5000
+        },
+        {
+            "id": "track_scene_item_3",
+            "layer": 0,
+            "sceneId": "scene_item_3",
+            "startMs": 14000,
+            "durationMs": 5000
+        },
+        {
+            "id": "track_scene_item_4",
+            "layer": 0,
+            "sceneId": "scene_item_4",
+            "startMs": 19000,
+            "durationMs": 5000
+        },
+        {
+            "id": "track_scene_item_5",
+            "layer": 0,
+            "sceneId": "scene_item_5",
+            "startMs": 24000,
+            "durationMs": 5000
+        },
+        {
+            "id": "track_scene_item_6",
+            "layer": 0,
+            "sceneId": "scene_item_6",
+            "startMs": 29000,
+            "durationMs": 5000
+        },
+        {
+            "id": "track_scene_item_7",
+            "layer": 0,
+            "sceneId": "scene_item_7",
+            "startMs": 34000,
+            "durationMs": 5000
+        },
+        {
+            "id": "track_scene_item_8",
+            "layer": 0,
+            "sceneId": "scene_item_8",
+            "startMs": 39000,
+            "durationMs": 5000
+        },
+        {
+            "id": "track_scene_item_9",
+            "layer": 0,
+            "sceneId": "scene_item_9",
+            "startMs": 44000,
+            "durationMs": 5000
+        },
+        {
+            "id": "track_scene_item_10",
+            "layer": 0,
+            "sceneId": "scene_item_10",
+            "startMs": 49000,
+            "durationMs": 5000
+        },
+        {
+            "id": "track_scene_cta",
+            "layer": 0,
+            "sceneId": "scene_cta",
+            "startMs": 54000,
+            "durationMs": 3500
+        }
+    ]
+}

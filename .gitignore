@@ -1,0 +1,20 @@
+node_modules
+dist
+.DS_Store
+.env
+coverage
+*.log
+*.tsbuildinfo
+apps/api/bin
+apps/api/uploads
+
+# Font manager DB and local font files
+/data/
+.logs/
+
+# Raw asset ingestion staging (scripts/ingest-assets.ts) — processed output
+# lives in apps/api/system/ and is version-controlled there instead.
+/svg_animations/
+/images/
+/videos/
+/phosphor-icons/

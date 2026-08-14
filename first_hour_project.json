@@ -1,0 +1,212 @@
+{
+  "id": "proj_first_hour_001",
+  "name": "Protect Your First Hour",
+  "viewport": { "width": 1080, "height": 1920 },
+  "scenes": [
+    {
+      "id": "scene_hook",
+      "name": "Hook",
+      "durationMs": 5000,
+      "backgroundColor": "#0f172a",
+      "background": {
+        "color": "#0f172a",
+        "color2": "#1e293b",
+        "gradientAngle": 160,
+        "opacity": 1
+      },
+      "elements": [
+        {
+          "id": "hook_title",
+          "type": "text",
+          "semanticRole": "hook_title",
+          "layout": { "x": 92, "y": 280, "width": 896, "height": 320, "rotation": 0, "scale": 1, "opacity": 1, "zIndex": 2 },
+          "style": { "fontFamily": "Space Grotesk", "fontSize": 88, "fontWeight": 700, "color": "#f8fafc", "textAlign": "left" },
+          "animations": [
+            { "id": "hook_title_slide", "type": "slideUp", "startMs": 0, "durationMs": 800, "easing": "easeOut" },
+            { "id": "hook_title_fade_in", "type": "fadeIn", "startMs": 0, "durationMs": 600, "easing": "easeOut" },
+            { "id": "hook_title_out", "type": "fadeOut", "startMs": 4300, "durationMs": 500, "easing": "easeIn" }
+          ],
+          "content": { "text": "You're losing an hour every morning." }
+        },
+        {
+          "id": "hook_accent_bar",
+          "type": "shape",
+          "semanticRole": "timeline_badge",
+          "layout": { "x": 92, "y": 640, "width": 80, "height": 6, "rotation": 0, "scale": 1, "opacity": 1, "zIndex": 2 },
+          "style": { "backgroundColor": "#f59e0b", "fillPattern": "solid" },
+          "animations": [
+            { "id": "hook_bar_slide", "type": "slideRight", "startMs": 400, "durationMs": 500, "easing": "easeOut" },
+            { "id": "hook_bar_fade_in", "type": "fadeIn", "startMs": 400, "durationMs": 400, "easing": "easeOut" },
+            { "id": "hook_bar_out", "type": "fadeOut", "startMs": 4400, "durationMs": 400, "easing": "easeIn" }
+          ],
+          "content": { "shape": "rectangle" }
+        },
+        {
+          "id": "hook_sub",
+          "type": "text",
+          "semanticRole": "supporting_caption",
+          "layout": { "x": 92, "y": 680, "width": 896, "height": 160, "rotation": 0, "scale": 1, "opacity": 1, "zIndex": 3 },
+          "style": { "fontFamily": "Inter", "fontSize": 38, "fontWeight": 400, "color": "#94a3b8", "textAlign": "left" },
+          "animations": [
+            { "id": "hook_sub_fade_in", "type": "fadeIn", "startMs": 500, "durationMs": 700, "easing": "easeOut" },
+            { "id": "hook_sub_out", "type": "fadeOut", "startMs": 4400, "durationMs": 400, "easing": "easeIn" }
+          ],
+          "content": { "text": "And you don't even notice it happening." }
+        }
+      ]
+    },
+    {
+      "id": "scene_breakdown",
+      "name": "Breakdown",
+      "durationMs": 5000,
+      "backgroundColor": "#0f172a",
+      "background": {
+        "color": "#0f172a",
+        "color2": "#1e293b",
+        "gradientAngle": 180,
+        "opacity": 1
+      },
+      "elements": [
+        {
+          "id": "breakdown_section_title",
+          "type": "text",
+          "semanticRole": "section_title",
+          "layout": { "x": 92, "y": 200, "width": 896, "height": 100, "rotation": 0, "scale": 1, "opacity": 1, "zIndex": 2 },
+          "style": { "fontFamily": "Space Grotesk", "fontSize": 42, "fontWeight": 600, "color": "#64748b", "textAlign": "left" },
+          "animations": [
+            { "id": "breakdown_title_in", "type": "fadeIn", "startMs": 0, "durationMs": 600, "easing": "easeOut" },
+            { "id": "breakdown_title_out", "type": "fadeOut", "startMs": 4400, "durationMs": 400, "easing": "easeIn" }
+          ],
+          "content": { "text": "Two types of mornings." }
+        },
+        {
+          "id": "breakdown_card_most",
+          "type": "shape",
+          "semanticRole": "explanation_card",
+          "layout": { "x": 80, "y": 350, "width": 920, "height": 500, "rotation": 0, "scale": 1, "opacity": 1, "zIndex": 1 },
+          "style": { "backgroundColor": "#1e293b", "fillPattern": "solid", "borderRadius": 20 },
+          "animations": [
+            { "id": "card_most_slide", "type": "slideUp", "startMs": 150, "durationMs": 700, "easing": "easeOut" },
+            { "id": "card_most_fade_in", "type": "fadeIn", "startMs": 150, "durationMs": 500, "easing": "easeOut" },
+            { "id": "card_most_out", "type": "fadeOut", "startMs": 4300, "durationMs": 500, "easing": "easeIn" }
+          ],
+          "content": { "shape": "rectangle" }
+        },
+        {
+          "id": "breakdown_label_most",
+          "type": "text",
+          "semanticRole": "section_title",
+          "layout": { "x": 120, "y": 385, "width": 840, "height": 70, "rotation": 0, "scale": 1, "opacity": 1, "zIndex": 3 },
+          "style": { "fontFamily": "Space Grotesk", "fontSize": 34, "fontWeight": 700, "color": "#ef4444", "textAlign": "left" },
+          "animations": [
+            { "id": "label_most_in", "type": "fadeIn", "startMs": 300, "durationMs": 500, "easing": "easeOut" },
+            { "id": "label_most_out", "type": "fadeOut", "startMs": 4300, "durationMs": 500, "easing": "easeIn" }
+          ],
+          "content": { "text": "Most people" }
+        },
+        {
+          "id": "breakdown_body_most",
+          "type": "text",
+          "semanticRole": "body_copy",
+          "layout": { "x": 120, "y": 465, "width": 840, "height": 340, "rotation": 0, "scale": 1, "opacity": 1, "zIndex": 3 },
+          "style": { "fontFamily": "Inter", "fontSize": 38, "fontWeight": 400, "color": "#cbd5e1", "textAlign": "left" },
+          "animations": [
+            { "id": "body_most_in", "type": "fadeIn", "startMs": 450, "durationMs": 600, "easing": "easeOut" },
+            { "id": "body_most_out", "type": "fadeOut", "startMs": 4300, "durationMs": 500, "easing": "easeIn" }
+          ],
+          "content": { "text": "Scroll Instagram.\nCheck Slack.\nWatch YouTube shorts.\nBrain fog before 9am." }
+        },
+        {
+          "id": "breakdown_card_top",
+          "type": "shape",
+          "semanticRole": "explanation_card",
+          "layout": { "x": 80, "y": 920, "width": 920, "height": 480, "rotation": 0, "scale": 1, "opacity": 1, "zIndex": 1 },
+          "style": { "backgroundColor": "#1e293b", "fillPattern": "solid", "borderRadius": 20 },
+          "animations": [
+            { "id": "card_top_slide", "type": "slideUp", "startMs": 600, "durationMs": 700, "easing": "easeOut" },
+            { "id": "card_top_fade_in", "type": "fadeIn", "startMs": 600, "durationMs": 500, "easing": "easeOut" },
+            { "id": "card_top_out", "type": "fadeOut", "startMs": 4300, "durationMs": 500, "easing": "easeIn" }
+          ],
+          "content": { "shape": "rectangle" }
+        },
+        {
+          "id": "breakdown_label_top",
+          "type": "text",
+          "semanticRole": "section_title",
+          "layout": { "x": 120, "y": 955, "width": 840, "height": 70, "rotation": 0, "scale": 1, "opacity": 1, "zIndex": 3 },
+          "style": { "fontFamily": "Space Grotesk", "fontSize": 34, "fontWeight": 700, "color": "#22c55e", "textAlign": "left" },
+          "animations": [
+            { "id": "label_top_in", "type": "fadeIn", "startMs": 750, "durationMs": 500, "easing": "easeOut" },
+            { "id": "label_top_out", "type": "fadeOut", "startMs": 4300, "durationMs": 500, "easing": "easeIn" }
+          ],
+          "content": { "text": "Top performers" }
+        },
+        {
+          "id": "breakdown_body_top",
+          "type": "text",
+          "semanticRole": "body_copy",
+          "layout": { "x": 120, "y": 1035, "width": 840, "height": 320, "rotation": 0, "scale": 1, "opacity": 1, "zIndex": 3 },
+          "style": { "fontFamily": "Inter", "fontSize": 38, "fontWeight": 400, "color": "#cbd5e1", "textAlign": "left" },
+          "animations": [
+            { "id": "body_top_in", "type": "fadeIn", "startMs": 900, "durationMs": 600, "easing": "easeOut" },
+            { "id": "body_top_out", "type": "fadeOut", "startMs": 4300, "durationMs": 500, "easing": "easeIn" }
+          ],
+          "content": { "text": "Deep work first.\nPhone stays off.\nFull focus.\nDone by noon." }
+        }
+      ]
+    },
+    {
+      "id": "scene_cta",
+      "name": "CTA",
+      "durationMs": 4000,
+      "backgroundColor": "#1c1205",
+      "background": {
+        "color": "#1c1205",
+        "color2": "#292008",
+        "gradientAngle": 180,
+        "opacity": 1
+      },
+      "elements": [
+        {
+          "id": "cta_title",
+          "type": "text",
+          "semanticRole": "cta_title",
+          "layout": { "x": 92, "y": 680, "width": 896, "height": 300, "rotation": 0, "scale": 1, "opacity": 1, "zIndex": 2 },
+          "style": { "fontFamily": "Space Grotesk", "fontSize": 88, "fontWeight": 700, "color": "#f59e0b", "textAlign": "center" },
+          "animations": [
+            { "id": "cta_title_zoom", "type": "zoomIn", "startMs": 0, "durationMs": 700, "easing": "easeOut" },
+            { "id": "cta_title_fade_in", "type": "fadeIn", "startMs": 0, "durationMs": 600, "easing": "easeOut" }
+          ],
+          "content": { "text": "Protect your first hour." }
+        },
+        {
+          "id": "cta_divider",
+          "type": "shape",
+          "semanticRole": "timeline_badge",
+          "layout": { "x": 440, "y": 1020, "width": 200, "height": 4, "rotation": 0, "scale": 1, "opacity": 1, "zIndex": 2 },
+          "style": { "backgroundColor": "#f59e0b", "fillPattern": "solid" },
+          "animations": [
+            { "id": "cta_div_in", "type": "fadeIn", "startMs": 500, "durationMs": 500, "easing": "easeOut" }
+          ],
+          "content": { "shape": "rectangle" }
+        },
+        {
+          "id": "cta_sub",
+          "type": "text",
+          "semanticRole": "supporting_caption",
+          "layout": { "x": 92, "y": 1060, "width": 896, "height": 160, "rotation": 0, "scale": 1, "opacity": 1, "zIndex": 3 },
+          "style": { "fontFamily": "Inter", "fontSize": 38, "fontWeight": 400, "color": "#d97706", "textAlign": "center" },
+          "animations": [
+            { "id": "cta_sub_in", "type": "fadeIn", "startMs": 600, "durationMs": 700, "easing": "easeOut" }
+          ],
+          "content": { "text": "The rest of your day depends on it." }
+        }
+      ]
+    }
+  ],
+  "timelineTracks": [
+    { "id": "track_scene_hook", "sceneId": "scene_hook", "startMs": 0, "durationMs": 5000, "layer": 0 },
+    { "id": "track_scene_breakdown", "sceneId": "scene_breakdown", "startMs": 5000, "durationMs": 5000, "layer": 1 },
+    { "id": "track_scene_cta", "sceneId": "scene_cta", "startMs": 10000, "durationMs": 4000, "layer": 2 }
+  ]
+}

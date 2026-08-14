@@ -1,0 +1,22 @@
+{
+  "name": "@kwikk/renderer",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5174 --strictPort",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b"
+  },
+  "dependencies": {
+    "@kwikk/render-core": "workspace:*",
+    "@kwikk/scene-graph": "workspace:*",
+    "@kwikk/shared-types": "workspace:*",
+    "@kwikk/timeline": "workspace:*",
+    "pixi.js": "^8.2.6"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "vite": "^5.3.4"
+  }
+}
