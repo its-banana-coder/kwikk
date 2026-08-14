@@ -162,6 +162,19 @@ Tool groups:
 79 tools total. Full list via `tools/list` on the running server, or read
 `apps/mcp/src/tools/*.ts`.
 
+### Video creation skill
+
+Having the MCP tools isn't the same as knowing how to *use* them to make a
+video that's actually good — hook writing, retention pacing, mobile-safe
+layout, sound design, and a full brief-to-delivery pipeline are all workflow
+knowledge, not something the tools enforce. That workflow is packaged as
+[`.claude/skills/kwikk-video-workflow/`](.claude/skills/kwikk-video-workflow/SKILL.md).
+
+- **Claude Code** auto-discovers it from this repo — no setup needed.
+- **Any other AI coding tool** (Codex, Cursor, etc.) can use it too: point
+  it at `SKILL.md` as custom instructions/system prompt for video-creation
+  tasks. It's plain Markdown with a YAML frontmatter header.
+
 **Discover, then use, then contribute back** is the intended loop for style
 and motion work: call the `search_*`/`list_*` tools first to find an existing
 animation, composition, template, background, font, or inspiration example
