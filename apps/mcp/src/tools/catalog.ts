@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { apiGet, apiPost, apiPut, jsonValue, toResult } from "../client.js";
+import { apiGet, apiPost, apiPut, jsonValue, toResult, uploadFile } from "../client.js";
 
 const stringArray = z.array(z.string());
 
@@ -45,6 +45,43 @@ export function registerCatalogTools(server: McpServer) {
       source: z.enum(["upload", "stock", "css"]).optional().describe("'stock' or 'css' makes it show up in GET /v1/backgrounds"),
     },
     async (args: Record<string, unknown>) => toResult(() => apiPost("/v1/assets/from-url", args))
+  );
+
+  server.tool(
+    "upload_asset_file",
+    "Like add_asset, but for a file that only exists on THIS machine's local disk (e.g. a " +
+      "screenshot, an export the user handed you a path to) instead of something reachable by URL. " +
+      "Give it an absolute filePath — this MCP server reads the bytes itself and multipart-uploads " +
+      "them to the API, so no URL, auth token, or base64-in-the-tool-call is ever needed. Same result " +
+      "shape and same optional fields (description/tags/system/type/category/source) as add_asset. " +
+      "Use add_asset instead when the content already has a URL (Pixabay, a generated image's hosted " +
+      "URL, etc.) — this tool is only for local-filesystem files.",
+    {
+      filePath: z.string().describe("Absolute path to the file on this MCP server's local filesystem"),
+      name: z.string().optional().describe("Defaults to the file's basename"),
+      description: z.string().optional(),
+      tags: z.array(z.string()).optional(),
+      system: z.boolean().optional(),
+      type: z.enum(["image", "video", "audio", "svg_animation"]).optional().describe("overrides auto-detection from the file extension"),
+      category: z.string().optional().describe("e.g. 'nature', 'abstract', 'logo' — used by the asset/background browsers"),
+      source: z.enum(["upload", "stock", "css"]).optional().describe("'stock' or 'css' makes it show up in GET /v1/backgrounds"),
+    },
+    async (args: Record<string, unknown>) =>
+      toResult(() =>
+        uploadFile(
+          "/v1/assets/upload",
+          args.filePath as string,
+          {
+            description: args.description as string | undefined,
+            tags: Array.isArray(args.tags) ? (args.tags as string[]).join(",") : undefined,
+            system: args.system !== undefined ? String(args.system) : undefined,
+            type: args.type as string | undefined,
+            category: args.category as string | undefined,
+            source: args.source as string | undefined,
+          },
+          args.name as string | undefined
+        )
+      )
   );
 
   server.tool(

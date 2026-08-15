@@ -63,6 +63,46 @@ export async function downloadFile(apiPath: string, destPath?: string): Promise<
   return { path: dest, bytes: buffer.length };
 }
 
+const MIME_BY_EXT: Record<string, string> = {
+  ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".gif": "image/gif",
+  ".webp": "image/webp", ".svg": "image/svg+xml", ".bmp": "image/bmp",
+  ".mp4": "video/mp4", ".webm": "video/webm", ".mov": "video/quicktime", ".m4v": "video/x-m4v", ".mkv": "video/x-matroska",
+  ".mp3": "audio/mpeg", ".wav": "audio/wav", ".ogg": "audio/ogg", ".m4a": "audio/mp4", ".aac": "audio/aac", ".flac": "audio/flac",
+};
+
+/**
+ * Reads a local file (from this MCP server process's own filesystem — the only
+ * place a "local file path" is meaningful, since apps/api may run on a different
+ * host) and multipart-uploads it to an API endpoint, e.g. /v1/assets/upload.
+ * Mirrors downloadFile()'s role in reverse: local disk access lives here so
+ * tool handlers never need direct fs access.
+ */
+export async function uploadFile(
+  apiPath: string,
+  filePath: string,
+  fields: Record<string, string | undefined> = {},
+  name?: string
+): Promise<unknown> {
+  const resolved = path.resolve(filePath);
+  const bytes = await fs.promises.readFile(resolved);
+  const mime = MIME_BY_EXT[path.extname(resolved).toLowerCase()] ?? "application/octet-stream";
+
+  const form = new FormData();
+  form.set("file", new Blob([bytes], { type: mime }), name?.trim() || path.basename(resolved));
+  for (const [key, value] of Object.entries(fields)) {
+    if (value !== undefined) form.set(key, value);
+  }
+
+  const res = await fetch(`${API_URL}${apiPath}`, { method: "POST", body: form });
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!res.ok) {
+    const message = (data && (data.error ?? data.message)) ?? `${res.status} ${res.statusText}`;
+    throw new KwikkApiError(typeof message === "string" ? message : JSON.stringify(message));
+  }
+  return data;
+}
+
 /** Calls the generic tool passthrough — POST /v1/tools/:name (executeTool()). */
 export const callTool = (name: string, input: Record<string, unknown> = {}) =>
   apiPost(`/v1/tools/${name}`, input);

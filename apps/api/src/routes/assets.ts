@@ -175,6 +175,10 @@ assetRoutes.post("/upload", async (c) => {
   const description = (form.get("description") as string | null) ?? "";
   const tagsRaw = (form.get("tags") as string | null) ?? "";
   const tags = tagsRaw ? tagsRaw.split(",").map((t) => t.trim()).filter(Boolean) : [];
+  const category = (form.get("category") as string | null) ?? undefined;
+  const source = (form.get("source") as string | null) ?? undefined;
+  const assetType = (form.get("type") as string | null) ?? undefined;
+  const system = (form.get("system") as string | null) === "true";
 
   const asset = await insertAssetFromBytes({
     name: file.name,
@@ -182,8 +186,11 @@ assetRoutes.post("/upload", async (c) => {
     mime: file.type ?? "",
     description,
     tags,
-    userId: DEFAULT_USER_ID,
+    userId: system ? null : DEFAULT_USER_ID,
     baseUrl: requestBaseUrl(c),
+    category,
+    source,
+    assetType,
   });
 
   return c.json(asset, 201);
